@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="jspm_packages/npm/codemirror@5.21.0/lib/codemirror.css"/>
+        <style>
+            body {
+                display: flex;
+                flex-direction: row;
+            }
+
+             .CodeMirror {
+                border: 1px solid hsl(0, 0%, 90%);
+                height: auto;
+                width: 50%;
+            }
+
+            /*#editor {
+                height: 80%;
+                width: 50%;
+            }*/
+        </style>
+    </head>
+    <body>
+        <svg id="visualization"></svg>
+        <textarea id="editor"></textarea>
+        <script src="jspm_packages/system.js"></script>
+        <script src="config.js"></script>
+        <script>
+            System.import('src/index.js');
+        </script>
+    </body>
+</html>
