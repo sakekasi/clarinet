@@ -1,0 +1,42 @@
+/*
+
+    Name:       grayscale
+    Author:    Saketh Kasibatla
+
+*/
+
+.cm-s-grayscale.CodeMirror { background: hsl(0, 0%, 100%); color: hsl(0, 0%, 50%); }
+.cm-s-grayscale div.CodeMirror-selected { background: hsl(0, 0%, 90%); }
+
+.cm-s-grayscale .CodeMirror-line::selection, .cm-s-grayscale .CodeMirror-line > span::selection, .cm-s-grayscale .CodeMirror-line > span > span::selection { background: hsl(0, 0%, 90%); }
+.cm-s-grayscale .CodeMirror-line::-moz-selection, .cm-s-grayscale .CodeMirror-line > span::-moz-selection, .cm-s-grayscale .CodeMirror-line > span > span::selection { background: hsl(0, 0%, 90%); }
+
+.cm-s-grayscale .CodeMirror-gutters { background: hsl(0, 0%, 97%); border-right: 1px solid hsl(0, 0%, 86.7%); }
+.cm-s-grayscale .CodeMirror-guttermarker { color: hsl(4.2, 74.6%, 49.2%); }
+.cm-s-grayscale .CodeMirror-guttermarker-subtle { color: hsl(0, 0%, 49.4%); }
+.cm-s-grayscale .CodeMirror-linenumber { color: hsl(0, 0%, 50%); }
+
+.cm-s-grayscale .CodeMirror-cursor { border-left: 1px solid hsl(0, 0%, 36%); }
+
+.cm-s-grayscale span.cm-comment { color: hsl(0, 0%, 80%); }
+/*.cm-s-grayscale span.cm-atom { color: #a16a94; }*/
+.cm-s-grayscale span.cm-number { color: hsl(0, 0%, 20%); }
+
+/*.cm-s-grayscale span.cm-property, .cm-s-grayscale span.cm-attribute { color: #01a252; }*/
+.cm-s-grayscale span.cm-keyword { /*font-weight: bold;*/ color: inherit; } /**/
+.cm-s-grayscale span.cm-string { color: hsl(0, 0%, 20%); }
+
+.cm-s-grayscale span.cm-variable { color: hsl(0, 0%, 20%); }
+.cm-s-grayscale span.cm-variable-2 { color: hsl(0, 0%, 20%); }
+.cm-s-grayscale span.cm-def {  font-weight: bold; color: hsl(0, 0%, 35%); }
+/*.cm-s-grayscale span.cm-bracket { color: hsl(0, 0%, 20%); }*/
+/*.cm-s-grayscale span.cm-tag { color: hsl(0, 0%, 20%); }*/
+.cm-s-grayscale span.cm-link { color: hsl(222, 83.8%, 50.6%); }
+.cm-s-grayscale span.cm-error { 
+    text-decoration: underline;
+    -moz-text-decoration-color: hsl(0, 100%, 69.5%); /* Code for Firefox */
+    text-decoration-color: hsl(0, 100%, 69.5%); 
+}
+
+.cm-s-grayscale .CodeMirror-activeline-background { background: hsl(0, 0%, 92%); }
+.cm-s-grayscale .CodeMirror-matchingbracket { text-decoration: underline; font-weight: bold !important; }

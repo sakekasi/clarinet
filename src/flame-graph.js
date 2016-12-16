@@ -13,7 +13,6 @@ function wrap(width, padding) {
         if (memo.hasOwnProperty(origText)) {
             self.text(memo[origText]);
         } else {
-            console.error('compute');
             while (textLength > (width - (2 * padding)) && text.length > 0) {
                 text = text.slice(0, -1);
                 self.text(text + '…');
@@ -147,3 +146,8 @@ export function forEachCall(fn, predicate = (_) => true) {
         .filter(function(datum) { return predicate(this.datum); })
         .each(function(datum) { return fn(this.datum); })
 }
+
+export var swatches = d3.scaleLinear()
+    .domain([1, 7])
+    .range([d3.hcl(0, 30, 80), d3.hcl(360, 30, 80)])
+    .interpolate(d3.interpolateHclLong);

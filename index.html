@@ -2,27 +2,72 @@
 <html>
     <head>
         <link rel="stylesheet" href="jspm_packages/npm/codemirror@5.21.0/lib/codemirror.css"/>
+        <link rel="stylesheet" href="stylesheets/grayscale.css"/>
         <style>
             body {
                 display: flex;
                 flex-direction: row;
+                font-family: "cooper hewitt", Helvetica, Arial, sans-serif;
+            }
+
+            body > * {
+                flex: 1;
             }
 
              .CodeMirror {
                 border: 1px solid hsl(0, 0%, 90%);
                 height: auto;
+                width: 100%;
+            }
+
+            #editorColumn {
+                display: flex;
+                flex-direction: column;
                 width: 50%;
             }
 
-            /*#editor {
-                height: 80%;
-                width: 50%;
-            }*/
+            #errors {
+                color: hsl(0, 70.5%, 66.1%);
+                height: 100px;
+                overflow: auto;
+            }
+
+            #visualizationContainer {
+                overflow: auto;
+            }
         </style>
     </head>
     <body>
-        <svg id="visualization"></svg>
-        <textarea id="editor"></textarea>
+        <div id="visualizationContainer">
+            <svg id="visualization"></svg>
+        </div>
+        <div id="editorColumn">
+            <ul id="errors"></ul>
+            <textarea id="query">
+var sameArgs = queryCalls(callsWithSameArgument('fib'));
+sameArgs.select('rect').style('fill', swatches(0));
+            </textarea>
+            <textarea id="editor">
+var memo = {};
+
+function fib(x) {
+ // if (x in memo) {
+ //   return memo[x];
+ // }
+  
+  var ans;
+  if (x < 2) {
+    ans = x;
+  } else {
+    ans = fib(x-2) + fib(x-1);
+  }
+  memo[x] = ans;
+  return ans;
+}
+
+fib(5);
+            </textarea>
+        </div>
         <script src="jspm_packages/system.js"></script>
         <script src="config.js"></script>
         <script>

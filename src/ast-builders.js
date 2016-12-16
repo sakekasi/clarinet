@@ -10,6 +10,11 @@ export function clearStmt() {
     ));
 }
 
+export function useStrictStmt() {
+    // 'use strict';
+    return b.expressionStatement(literal('use strict'));
+}
+
 export function enterStmt(fnDecl) {
     let loc = literal(fnDecl.loc);
     let name = (fnDecl.id && fnDecl.id.name) || 'anonymous';
@@ -18,7 +23,7 @@ export function enterStmt(fnDecl) {
         b.identifier('ENTER'),
         [
             b.literal(name),
-            b.identifier(name),
+            name === 'anonymous' ? literal(null) : b.identifier(name),
             b.identifier('arguments'),
             loc
         ]

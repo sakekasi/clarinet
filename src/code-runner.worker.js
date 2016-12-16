@@ -1,6 +1,8 @@
 import * as lib from "./instrument-lib";
 Object.assign(self, lib);
 
+import Cow from "cow";
+
 import {info, err, WorkerEvent} from "./worker-utils";
 
 self.addEventListener('message', function(e) {
@@ -13,8 +15,11 @@ self.addEventListener('message', function(e) {
 });
 
 function start(code, map) {
+    'use strict';
     try {
+        MONKEYPATCH();
         eval(code);
+        RESETMONKEYPATCH();
         self.postMessage(new WorkerEvent('DONE', {
             trace: JSON.stringify(self.trace, serializableReplacer)
         }));
@@ -22,7 +27,7 @@ function start(code, map) {
     } catch (e) {
         self.postMessage(new WorkerEvent('DONE', {
             trace: JSON.stringify(self.trace, serializableReplacer),
-            error: e
+            error: e.toString != null ? e.toString() : JSON.stringify(e)
         }));
     }
 }

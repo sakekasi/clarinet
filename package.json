@@ -14,6 +14,7 @@
   "jspm": {
     "dependencies": {
       "codemirror": "npm:codemirror@^5.21.0",
+      "cow": "npm:cow@^0.2.2",
       "d3": "npm:d3@^4.4.0",
       "recast": "npm:recast@^0.11.18",
       "worker": "github:casperlamboo/plugin-worker@master"

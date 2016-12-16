@@ -20,3 +20,14 @@ export function clear(node) {
         node.removeChild(node.firstChild);
     }
 }
+
+export function deepEquals(a, b) {
+    if (typeof a !== typeof b) {
+        return false;
+    } else if (typeof a === 'object') {
+        return Object.keys(a).every(key => deepEquals(a[key], b[key])) &&
+            Object.keys(b).every(key => deepEquals(a[key], b[key]));
+    } else {
+        return a === b;
+    }
+}

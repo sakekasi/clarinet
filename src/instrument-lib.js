@@ -32,7 +32,7 @@ export class ExecutionTrace extends Serializable {
         let serializedFunctions = {};
         Object.keys(this.functions)
             .forEach(key => {
-                serializedFunctions[key] = this.functions[key].toString();
+                serializedFunctions[key] = this.functions[key] === null ? this.functions[key] : this.functions[key].toString();
             });
 
         let serializedCalls = Object.keys(this.calls)
@@ -40,7 +40,12 @@ export class ExecutionTrace extends Serializable {
             .reduce((agg, b) => agg.concat(b), [])
             .sort((a, b) => a.uid < b.uid ? -1 : a.uid === b.uid ? 0 : 1);
         
-        return {_type: 'ExecutionTrace', functions: serializedFunctions, calls: serializedCalls, rootCall: this.rootCall.uid};
+        return {
+            _type: 'ExecutionTrace', 
+            functions: serializedFunctions, 
+            calls: serializedCalls, 
+            rootCall: this.rootCall !== null ? this.rootCall.uid : null
+        };
     }
 
     deserialize(data) {
@@ -61,7 +66,7 @@ export class ExecutionTrace extends Serializable {
             
         this.functions = deserializedFunctions;
         this.calls = deserializedCalls;
-        this.rootCall = this._lookupUid(data.rootCall);
+        this.rootCall = data.rootCall === null ? null : this._lookupUid(data.rootCall);
     } 
 }
 
@@ -180,7 +185,6 @@ export function serializableReviver(classes = {
         Object.keys(classes)
             .forEach(className => {
                 if (value != null && value.hasOwnProperty('_type') && value._type === className) {
-                    console.warn(className);
                     let constr = classes[className];
                     ans = constr(value);
                     assert(ans instanceof Serializable, `${className} is not a subclass of Serializable`);
@@ -228,4 +232,33 @@ export function LEAVE(returnValue) {
 export function CLEAR() {
     trace = new ExecutionTrace();
     state = new ExecutionState();
+}
+
+var uninstrumented = {}
+
+export function MONKEYPATCH() {
+    uninstrumented['Array.map'] = Array.prototype.map;
+    uninstrumented['Array.filter'] = Array.prototype.filter;
+    uninstrumented['Array.reduce'] = Array.prototype.reduce;
+
+    Object.keys(uninstrumented)
+        .forEach(key => {
+            let methodName = key.split('.')[1];
+            Array.prototype[methodName] = wrapBuiltin(key, uninstrumented[key]);
+        });
+}
+
+function wrapBuiltin(name, uninstrumented) {
+    return function() {
+        ENTER(name, uninstrumented, arguments, null);
+        return LEAVE(uninstrumented.apply(this, arguments));
+    }
+}
+
+export function RESETMONKEYPATCH() {
+    Object.keys(uninstrumented)
+        .forEach(key => {
+            let methodName = key.split('.')[1];
+            Array.prototype[methodName] = uninstrumented[key];
+        });
 }
