@@ -1,8 +1,6 @@
 import * as lib from "./instrument-lib";
 Object.assign(self, lib);
 
-import Cow from "cow";
-
 import {info, err, WorkerEvent} from "./worker-utils";
 
 self.addEventListener('message', function(e) {

@@ -18,7 +18,6 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.38",
     "codemirror": "npm:codemirror@5.21.0",
     "core-js": "npm:core-js@1.2.7",
-    "cow": "npm:cow@0.2.2",
     "d3": "npm:d3@4.4.0",
     "recast": "npm:recast@0.11.18",
     "worker": "github:casperlamboo/plugin-worker@master",
@@ -105,10 +104,6 @@ System.config({
     },
     "npm:core-util-is@1.0.2": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0"
-    },
-    "npm:cow@0.2.2": {
-      "harmony-proxy": "npm:harmony-proxy@0.0.2",
-      "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:d3-brush@1.0.3": {
       "d3-dispatch": "npm:d3-dispatch@1.0.2",
@@ -222,9 +217,6 @@ System.config({
     },
     "npm:graceful-readlink@1.0.1": {
       "fs": "github:jspm/nodelibs-fs@0.1.2"
-    },
-    "npm:harmony-proxy@0.0.2": {
-      "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:https-browserify@0.0.0": {
       "http": "github:jspm/nodelibs-http@1.7.1"
