@@ -23,6 +23,10 @@ function start(code, map) {
         }));
         self.close();
     } catch (e) {
+        if (state.currentCall !== null) {
+            state.currentCall.isError = true;
+        }
+        RESETMONKEYPATCH();
         self.postMessage(new WorkerEvent('DONE', {
             trace: JSON.stringify(self.trace, serializableReplacer),
             error: e.toString != null ? e.toString() : JSON.stringify(e)

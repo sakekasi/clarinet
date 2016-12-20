@@ -60,3 +60,9 @@ export function nCallsFromParent(fnName, n) {
         return call.parent !== null && call.fnName === fnName && sameParent[call.parent.uid] === n;
     };
 }
+
+let swatchIndex = 1;
+export function nextSwatch(query) {
+    let index = swatchIndex++;
+    query.select('rect').style('fill', swatches(index % 6));
+}

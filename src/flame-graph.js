@@ -1,5 +1,6 @@
 import {$} from "./utils";
 import * as d3 from "d3";
+window.d3 = d3;
 
 // binary chop
 function wrap(width, padding) {
@@ -23,131 +24,223 @@ function wrap(width, padding) {
     };
 } 
 
-export default function flameGraph(svg, calls, rootCall) {
-    let currentFunction = null;
-    let levels = [];
-    let allCalls = Object.keys(calls)
-        .map(key => calls[key])
-        .reduce((agg, b) => agg.concat(b), []);
+export default class FlameGraph {
+    constructor(editor, svg, calls, rootCall) {
+        this.currentFunction = null;
+        this.svg = svg;
+        this.editor = editor;
 
-    // assign each call a level (root is 0)
-    allCalls.forEach(call => {
-        if (!levels.hasOwnProperty(call.level)) {
-            levels[call.level] = [];
+        this.calls = Object.keys(calls)
+            .map(key => calls[key])
+            .map(call => new CallWrapper(call, this))
+            .reduce((agg, b) => agg.concat(b), []);
+        this.rootCall = rootCall;
+
+        // assign each call a level (root is 0)
+        this.levels = [];
+        this.calls
+            .forEach(call => {
+                if (!this.levels.hasOwnProperty(call.level)) {
+                    levels[call.level] = [];
+                }
+                levels[call.level].push(call);
+            });
+        
+        // vertical ordering is by uid (time of call)
+        Object.keys(levels)
+            .forEach(key => levels[key].sort((a, b) => a.uid < b.uid ? -1 : a.uid === b.uid ? 0 : 1));
+
+        this.styles = {
+            default: {
+                maxWidth: null,
+                paddingLeft: 5,
+                paddingRight: 5,
+                paddingTop: 5,
+                paddingBottom: 5,
+                marginBottom: 5,
+                marginRight: 5
+            },
+            label: {
+                fontFamily: 'Cooper Hewitt, Helvetica, Arial, sans-serif',
+                fontSize: '16px',
+                paddingBottom: 2
+            },
+            info: {
+                fontFamily: 'Bookerly, Input Serif, serif',
+                fontSize: '8px',
+                paddingBottom: 2
+            },
+            stack: {
+                fontWeight: 600
+            }
+        };
+        deepFreeze(this.styles);
+    }
+
+    _clearCache() {
+        this.calls
+            .forEach(call => call._clearCache());
+    }
+
+    get levelWidth() {
+        return this.calls
+            .reduce(agg, b => Math.max(agg, b.width), 0);
+    }
+
+    _update() {
+        let transition;
+        transition = d3.transition();
+
+        this._clearCache();
+        this.rootCall.y;
+
+        // level x
+        this.levels
+            .transition(transition)
+                .attr('transform', datum => `translate(${datum[0].x}, 0)`);
+
+        // callGroup y
+        this.callGroups
+            .transition(transition)
+                .attr('transform', datum => `translate(0, ${datum.y})`)
+        
+        // rect height, width
+        this.callRects
+            .transition(transition)
+                .attr('width', this.levelWidth)
+                .attr('height', datum => datum.height); // TODO: collapsed as a part of height
+
+        // infos
+        this.callGroups
+            .select('g.info')
+            .data(datum => datum.infos)
+                .enter().append('text')
+                    .text(info => info)
+                    .style('font-family', this.styles.info.fontFamily)
+                    .style('font-size', this.styles.info.fontSize)
+                .exit().remove();
+    }
+
+    render(update = false) {
+        if (update) {
+            this._update();
         }
-        levels[call.level].push(call);
-    });
 
-    // vertical ordering is by uid (time of call)
-    Object.keys(levels)
-        .forEach(key => levels[key].sort((a, b) => a.uid < b.uid ? -1 : a.uid === b.uid ? 0 : 1));
+        this.rootCall.y;
 
-    const callWidth = 150,
-        callHeight = 20,
-        paddingY = 5,
-        paddingX = 5;
+        let that = this;
+        let d3svg = d3.select(this.svg);
 
-    rootCall.height(callHeight, paddingY);
-    
-    rootCall.calculateY(callHeight, paddingY);
+        let levels = this.levels = d3svg
+            .selectAll('g.level')
+            .data(this.levels)
+            .enter().append('g')
+                .classed('level', true)
+                .attr('transform', datum => `translate(${datum[0].x}, 0)`);
+        
+        let callGroups = this.callGroups = levels
+            .selectAll('g.call')
+            .data(datum => datum)
+            .enter().append('g')
+                .classed('call', true)
+                .attr('transform', datum => `translate(0, ${datum.y})`)
+                .each(function(datum) {
+                    this.datum = datum;
+                    datum.DOM = this;
+                })
+                .on('mouseover', function(datum) {
+                    that.currentFunction = datum;
+                    that.markEditor(currentFunction);
+                    d3.select(that.currentFunction.DOM)
+                        .classed('currentFunction', true);
 
-    d3svg = d3.select(svg);
+                    let current = that.currentFunction;
+                    while (current !== null) {
+                        d3.select(current.DOM)
+                            .style('font-weight', that.styles.stack.fontWeight)
+                            .classed('callStack', true);
+                        current = current.parent;
+                    }
 
-    let d3levels = d3svg
-        .selectAll('g.level')
-        .data(levels)
-        .enter().append('g')
-            .attr('class', 'level')
-            .attr('transform', datum => `translate(${datum[0].level * (callWidth + paddingX)}, 0)`)
-            .each(function(datum) {
-                let g = d3.select(this)
-                    .selectAll('g.call')
-                    .data(datum)
-                    .enter().append('g')
-                        .attr('class', 'call')
-                        .attr('transform', datum => `translate(0,${datum.y})`)
-                        .each(function(datum) { 
-                            this.datum = datum;
-                            datum.DOM = this; 
-                        })
-                        .on('mouseover', function(datum) {
-                            currentFunction = datum;
-                            d3.select(currentFunction.DOM)
-                                .classed('currentFunction', true);
+                    let printable = {
+                        name: that.currentFunction.fnName, 
+                        args: that.currentFunction.args, 
+                        returnValue: that.currentFunction.returnValue,
+                        uid: that.currentFunction.uid
+                    };
+                })
+                 .on('mouseout', function(datum) {
+                    that.clearEditorMarks();
+                    d3.select(that.currentFunction.DOM)
+                        .classed('currentFunction', false);
 
-                            let current = currentFunction;
-                            while (current !== null) {
-                                d3.select(current.DOM)
-                                    .style('font-weight', 600)
-                                    .classed('callStack', true);
-                                current = current.parent;
-                            }
+                    let current = that.currentFunction;
+                    that.currentFunction = null;
+                    while (current !== null) {
+                        d3.select(current.DOM)
+                            .style('font-weight', 'normal')
+                            .classed('callStack', false);
+                        current = current.parent;
+                    }
+                });
+        
+        callGroups.append('svg:title')
+            .text(datum => datum.fnName);
 
-                            let printable = {
-                                name: currentFunction.fnName, 
-                                args: currentFunction.args, 
-                                returnValue: currentFunction.returnValue,
-                                uid: currentFunction.uid
-                            };
-                            $('#currentCall').textContent = JSON.stringify(printable, null, 2);
-                        })
-                        .on('mouseout', function(datum) {
-                            d3.select(currentFunction.DOM)
-                                .classed('currentFunction', false);
+        this.callRect = callGroups.append('rect')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', this.levelWidth) 
+            .attr('pointer-events', 'visible')
+            .attr('height', datum => datum.height)
+            .attr('stroke', d3.hcl(0, 0, 80))
+            .attr('stroke-width', '1px')
+            .attr('fill', 'none');
+        
+        callGroups.append('text')
+            .attr('x', 5)
+            .attr('y', 15)
+            .attr('width', this.levelWidth)
+            .attr('height', datum => datum.height(callHeight, paddingY, true))
+            .text(datum => datum.fnName)
+            .attr('font-family', 'Cooper Hewitt, input mono compressed')
+            .each(wrap(this.levelWidth, 2));   
 
-                            currentFunction = null;
-                            let current = datum;
-                            while (current !== null) {
-                                d3.select(current.DOM)
-                                    .style('font-weight', 'normal')
-                                    .classed('callStack', false);
-                                current = current.parent;
-                            }
-                        })
+        callGroups.append('g')
+            .classed('info', true)
+            .attr('transform', datum => `translate(${this.styles.default.paddingLeft}, ${
+                this.styles.default.paddingTop + datum._labelHeight + this.styles.label.paddingBottom
+            })`);
+        
+        d3svg
+            .attr('width', this.levels.length * (this.calls[0].width + this.styles.default.marginRight))
+            .attr('height', this.rootCall.height);
+    }
 
-                g.append('svg:title')
-                    .text(datum => datum.fnName);
-                
-                g.append('rect')
-                    .attr('x', 0)
-                    .attr('y', 0)
-                    .attr('width', callWidth)
-                    .attr('pointer-events', 'visible')
-                    .attr('height', datum => datum.height(callHeight, paddingY, true))
-                    .attr('stroke', d3.hcl(0, 0, 80))
-                    .attr('stroke-width', '1px')
-                    .attr('fill', 'none');
-                
-                g.append('text')
-                    .attr('x', 5)
-                    .attr('y', 15)
-                    .attr('width', callWidth)
-                    .attr('height', datum => datum.height(callHeight, paddingY, true))
-                    .text(datum => datum.fnName)
-                    .attr('font-family', 'Cooper Hewitt, input mono compressed')
-                    .each(wrap(callWidth, 2));   
+    markEditor(fn) {
+        if (fn.location === null) {
+            return;
+        }
 
-                g.exit().remove();
-            })
-        .exit().remove();
+        this.editor.markText(
+            {line: fn.location.start.line-1, ch: fn.location.start.column},
+            {line: fn.location.end.line-1, ch: fn.location.end.column},
+            {className: 'highlight'}
+        );
+    }
 
-    d3svg
-        .attr('width', levels.length * (callWidth + paddingX))
-        .attr('height', rootCall.height(callHeight, paddingY, true));
+    clearEditorMarks() {
+        this.editor.getAllMarks()
+            .forEach(mark => mark.clear());
+    }
+
+    get data() {
+        return new SelectionWrapper(this.callGroups);
+    }
 }
 
-export function query(predicate) {
-    return d3.selectAll('g.call')
-        .filter(function(datum) { return predicate(this.datum); });
-}
-
-export function forEachCall(fn, predicate = (_) => true) {
-    return d3.selectAll('g.call')
-        .filter(function(datum) { return predicate(this.datum); })
-        .each(function(datum) { return fn(this.datum); })
-}
 
 export var swatches = d3.scaleLinear()
     .domain([1, 7])
-    .range([d3.hcl(0, 30, 80), d3.hcl(360, 30, 80)])
+    .range([d3.hcl(0, 30, 90), d3.hcl(360, 30, 90)])
     .interpolate(d3.interpolateHclLong);

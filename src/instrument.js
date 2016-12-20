@@ -1,7 +1,7 @@
 import recast from "recast";
 const {builders: b} = recast.types;
 
-import {clearStmt, useStrictStmt, enterStmt, loopStmt, leaveStmt} from "./ast-builders";
+import {clearStmt, useStrictStmt, enterStmt, loopStmt, leaveStmt, leaveErrorStmt} from "./ast-builders";
 
 const {visit} = recast.types;
 
@@ -34,7 +34,7 @@ function transform(ast) {
         visitForInStatement: visitLoop,
 
         visitReturnStatement: visitLeave,
-        visitThrowStatement: visitLeave
+        visitThrowStatement: visitLeaveError
     });
 
     return ast;
@@ -69,5 +69,11 @@ function visitLoop(path) {
 function visitLeave(path) {
     let node = path.node;
     node.argument = leaveStmt(node.argument);
+    return this.traverse(path);
+}
+
+function visitLeaveError(path) {
+    let node = path.node;
+    node.argument = leaveErrorStmt(node.argument);
     return this.traverse(path);
 }

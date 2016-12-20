@@ -42,12 +42,27 @@ export function loopStmt(node) {
 export function leaveStmt(node) {
     node = node || literal(undefined);
     let loc = node != null ? literal(node.loc) : null;
-    // LEAVE(node, loc)
+    // LEAVE(node, false, loc)
     return b.callExpression(
         b.identifier('LEAVE'),
         [
             node,
-            loc
+            loc,
+            literal(false),
+        ]
+    );
+}
+
+export function leaveErrorStmt(node) {
+    node = node || literal(undefined);
+    let loc = node != null ? literal(node.loc) : null;
+    // LEAVE(node, true, loc)
+    return b.callExpression(
+        b.identifier('LEAVE'),
+        [
+            node,
+            loc,
+            literal(true),
         ]
     );
 }

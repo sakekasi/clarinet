@@ -33,7 +33,8 @@ export class WarningMessage extends Message {
 }
 
 export function print(...args) {
-    self.postMessage(new Message(args));
+    let msg = Object.assign({}, new Message(args))
+    self.postMessage(msg);
 } 
 
 export function err(...args) {

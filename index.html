@@ -26,14 +26,21 @@
                 width: 50%;
             }
 
-            #errors {
+            #log li.error {
                 color: hsl(0, 70.5%, 66.1%);
+            }
+
+            #log {
                 height: 100px;
                 overflow: auto;
             }
 
             #visualizationContainer {
                 overflow: auto;
+            }
+
+            .highlight {
+                background-color: hsl(57, 81.7%, 95%);
             }
         </style>
     </head>
@@ -42,8 +49,9 @@
             <svg id="visualization"></svg>
         </div>
         <div id="editorColumn">
-            <ul id="errors"></ul>
+            <ul id="log"></ul>
             <textarea id="query">
+queryCalls(call => call.isError).select('text').style('fill', 'red');
 var sameArgs = queryCalls(callsWithSameArgument('fib'));
 sameArgs.select('rect').style('fill', swatches(0));
             </textarea>
@@ -59,7 +67,7 @@ function fib(x) {
   if (x < 2) {
     ans = x;
   } else {
-    ans = fib(x-2) + fib(x-1);
+    ans = fib(x-1) + fib(x-2);
   }
   memo[x] = ans;
   return ans;

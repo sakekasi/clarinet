@@ -31,28 +31,65 @@ var editor = CodeMirror.fromTextArea($('#editor'), {
 var query = CodeMirror.fromTextArea($('#query'), {
     lineNumbers: true,
     mode: 'javascript',
-    theme: 'grayscale'
+    theme: 'grayscale',
+    extraKeys: {
+        'Ctrl-Enter': runCode
+    }
 })
 
 window.editor = editor;
 
-// let timeout = null;
-// const lagTime = 500;
-// editor.on('change', () => {
-//     if (timeout !== null) {
-//         clearTimeout(timeout);
-//     }
-//     timeout = setTimeout(runCode, lagTime);
-// });
+let savedEditorContent = localStorage.getItem('clarinet.editor');
+let savedQueryContent = localStorage.getItem('clarinet.query');
 
-function error(item) {
+if (savedEditorContent !== null && savedEditorContent.trim() !== '') {
+    editor.setValue(savedEditorContent);
+}
+if (savedQueryContent !== null && savedQueryContent.trim() !== '') {
+    query.setValue(savedQueryContent);
+}
+
+let timeoute = null;
+editor.on('change', () => {
+    if (timeoute !== null) {
+        clearTimeout(timeoute);
+    }
+    timeoute = setTimeout(save, lagTime);
+});
+
+let timeoutq = null;
+const lagTime = 100;
+query.on('change', () => {
+    if (timeoutq !== null) {
+        clearTimeout(timeoutq);
+    }
+    timeoutq = setTimeout(save, lagTime);
+});
+
+function save() {
+    localStorage.setItem('clarinet.editor', editor.getValue());
+    localStorage.setItem('clarinet.query', query.getValue());
+}
+
+function error(item, tag = '') {
+    if (tag !== '') {
+        tag = tag + ': '
+    }
+
     let li = document.createElement('li');
-    li.textContent = item.toString != null ? item.toString() : JSON.stringify(item);
-    $('#errors').insertBefore(li, $('#errors').firstChild);
+    li.textContent = tag + (item.toString != null ? item.toString() : JSON.stringify(item));
+    li.classList.add('error');
+    $('#log').insertBefore(li, $('#log').firstChild);
 } 
 
+function log(...args) {
+    let li = document.createElement('li');
+    li.textContent =  args.join(' ');
+    $('#log').insertBefore(li, $('#log').firstChild);
+}
+
 let codeRunner = null;
-function runCode(editor) {
+function runCode() {
     let code = editor.getValue();
     try {
         let instrumented = instrument(code);
@@ -60,6 +97,7 @@ function runCode(editor) {
         if (codeRunner !== null) {
             codeRunner.terminate();
         }
+        log(' ');
         codeRunner = new CodeRunner();
         codeRunner.postMessage(new WorkerEvent('INITIALIZE', {code: instrumented.code, map: null}));
         codeRunner.addEventListener('message', onMessage);
@@ -99,6 +137,7 @@ function onMessage(e) {
             console.warn(...e.data.data);
             break;
         case 'LOG':
+            log(...e.data.data);
             console.log(...e.data.data);
             break;
         case 'DONE':
@@ -116,7 +155,7 @@ function onMessage(e) {
                 try {
                     eval(queryCode);
                 } catch (e) {
-                    error(e);
+                    error(e, 'QUERY');
                 }
             }
             codeRunner = null;

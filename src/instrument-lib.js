@@ -1,4 +1,5 @@
 import {AbstractError, assert} from "./utils";
+import {print} from "./worker-utils";
 
 const OPERATION_BUDGET = 1000;
 
@@ -79,8 +80,11 @@ export class ExecutionState {
 }
 
 export class FnCall extends Serializable {
-    constructor(fnName, parent, args) {
+    constructor(fnName, parent, args, location) {
         super();
+        this.location = location;
+        this.isError = false;
+        this.tags = {};
         this.fnName = fnName;
         this.args = Array.prototype.slice.call(args);
         
@@ -108,35 +112,6 @@ export class FnCall extends Serializable {
         return this._level;
     }
 
-    height(base, padding, readFromCache = false) {
-        if (readFromCache === true) {
-            return this._height;
-        }
-
-        if (this.children.length === 0) {
-            this._height = base;
-        } else {
-            let total = this.children
-                .map(child => child.height(base, padding, readFromCache))
-                .reduce((agg, b, i, arr) => i < (arr.length - 1) ? padding + agg + b : agg + b, 0);
-            this._height = total;
-        }
-        return this._height;
-    }
-
-    calculateY(base, padding) {
-        if (this.parent === null) {
-            this.y = 0;
-        }
-
-        let childY = this.y;
-        this.children.forEach(child => {
-            child.y = childY;
-            child.calculateY(base, padding);
-            childY += child.height(base, padding, true) + padding;
-        });
-    }
-
     cache() {
         if (!trace.calls.hasOwnProperty(this.fnName)) {
             trace.calls[this.fnName] = [];
@@ -150,6 +125,9 @@ export class FnCall extends Serializable {
             fnName: this.fnName,
             args: this.args,
             uid: this.uid,
+            location: this.location,
+            isError: this.isError,
+            tags: this.tags,
             parent: this.parent === null ? null : this.parent.uid,
             children: this.children.map(child => child.uid)
         }
@@ -159,7 +137,10 @@ export class FnCall extends Serializable {
         // this.fnName = data.fnName;
         // this.args = data.args;
         this.uid = data.uid;
+        this.location = data.location;
+        this.isError = data.isError;
         this.parent = (data.parent === null) ? null : this._lookupUid(data.parent);
+        this.tags = data.tags;
         // this.children = data.children.map(child => this._lookupUid(child));
         if (this.parent !== null) {
             this.parent.children.push(this);
@@ -209,7 +190,7 @@ export function ENTER(fnName, fn, args, location) {
     }
 
 
-    let call = new FnCall(fnName, state.currentCall, args);
+    let call = new FnCall(fnName, state.currentCall, args, location);
     if (Object.keys(trace.calls).length === 0) {
         trace.rootCall = call;
     }
@@ -223,8 +204,9 @@ export function LOOP(location) {
     }
 }
 
-export function LEAVE(returnValue) {
+export function LEAVE(returnValue, loc, isError = false) {
     state.currentCall.returnValue = returnValue;
+    state.currentCall.isError = isError;
     state.currentCall = state.currentCall.parent;
     return returnValue;
 }
@@ -240,12 +222,24 @@ export function MONKEYPATCH() {
     uninstrumented['Array.map'] = Array.prototype.map;
     uninstrumented['Array.filter'] = Array.prototype.filter;
     uninstrumented['Array.reduce'] = Array.prototype.reduce;
+    uninstrumented['Array.forEach'] = Array.prototype.forEach;
+    uninstrumented['console.log'] = console.log;
 
     Object.keys(uninstrumented)
         .forEach(key => {
-            let methodName = key.split('.')[1];
-            Array.prototype[methodName] = wrapBuiltin(key, uninstrumented[key]);
+            let [className, methodName] = key.split('.');
+            if (className === 'Array') {
+                Array.prototype[methodName] = wrapBuiltin(key, uninstrumented[key]);
+            } else if (className === 'console' && methodName === 'log') {
+                let wrapped = function() {
+                    ENTER('console.log', uninstrumented['console.log'], arguments, null);
+                    LOG(Array.prototype.slice.call(arguments));
+                    return LEAVE(uninstrumented['console.log'].apply(console, arguments));
+                }
+                console[methodName] = wrapped;
+            }
         });
+
 }
 
 function wrapBuiltin(name, uninstrumented) {
@@ -256,9 +250,23 @@ function wrapBuiltin(name, uninstrumented) {
 }
 
 export function RESETMONKEYPATCH() {
-    Object.keys(uninstrumented)
-        .forEach(key => {
-            let methodName = key.split('.')[1];
-            Array.prototype[methodName] = uninstrumented[key];
+    uninstrumented['Array.forEach']
+        .call(Object.keys(uninstrumented), key => {
+            let [className, methodName] = key.split('.');
+            if (className === 'Array') {
+                Array.prototype[methodName] = uninstrumented[key];
+            } else if (className === 'console' && methodName === 'log') {
+                console[methodName] = uninstrumented[key];
+            }
         });
+}
+
+export function TAG(key, optValue = null, optCondition = function() {return true}) {
+    if (optCondition()) {
+        state.currentCall.tags[key] = optValue;
+    }
+}
+
+export function LOG(...args) {
+    print(...args);
 }
