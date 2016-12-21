@@ -1,4 +1,5 @@
-export default function SelectionWrapper(selection) {
+export default function SelectionWrapper(selection, parent) {
+    this._parent = parent;
     this._selection = selection;
     return new Proxy(this, handlers);
 }
@@ -11,45 +12,61 @@ SelectionWrapper.prototype.forEach = function(fn) {
 }
 
 SelectionWrapper.prototype.query = function(predicate) {
-    return new SelectionWrapper(d3.selectAll('g.call')
-        .filter(function(datum) { return predicate(this.datum._call); })
-    );
+    return new SelectionWrapper(this._selection
+        .filter(function(datum) { return predicate(this.datum._call); }),
+        this._parent);
 };
 
 SelectionWrapper.prototype.info = function(property) {
     this._selection.each(function(datum) {
         datum.infos.push(property(datum._call))
     });
-    // UPDATE DOM
+    this.render(true);
+    return this;
+};
+
+SelectionWrapper.prototype.clearInfos = function(property) {
+    this._selection.each(function(datum) {
+        datum.infos = [];
+    });
+    this.render(true);
     return this;
 };
 
 SelectionWrapper.prototype.collapse = function() {
     this._selection.each(function(datum) {
         datum.collapsed = true;
+        console.warn(datum, datum.collapsed);
     });
-    // UPDATE DOM
+    this._parent.render(true);
     return this;
 };
 
 var handlers  = {
     get(target, property, receiver) {
-        if (target.hasOwnProperty(property) || property in CallWrapper.prototype) {
+        if (property in target) {
             return target[property];
-        } else if (target._selection.hasOwnProperty(property) || property in target._selection.prototype) { // delegate to selection
+        } else if (property in target._selection) { // delegate to selection
             return target._selection[property];
+        } else if (property in target._parent) {
+            return target._parent[property];
         }
     },
     
     has(target, property) {
-        return target.hasOwnProperty(property) || (property in target._selection);
+        return propery in target || (property in target._selection) || (property in target._parent);
     },
     
     set(target, property, value, receiver) {
-        if (target.hasOwnProperty(property) || property in CallWrapper.prototype) {
-            return target[property] = value;
-        } else if (target._selection.hasOwnProperty(property) || property in target._selection.prototype) { // delegate to selection
-            return target._selection[property] = value;
+        if (property in target) {
+            target[property] = value;
+        } else if (property in target._selection) { // delegate to selection
+            target._selection[property] = value;
+        } else if (property in target._parent) {
+            target._parent[property] = value;
+        } else {
+            target[property] = value;
         }
+        return true;
     }
 };

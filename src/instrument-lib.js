@@ -1,7 +1,7 @@
 import {AbstractError, assert} from "./utils";
 import {print} from "./worker-utils";
 
-const OPERATION_BUDGET = 1000;
+const OPERATION_BUDGET = 200;
 
 export class OperationBudgetExceeded extends Error {
     constructor(location) {

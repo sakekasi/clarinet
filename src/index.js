@@ -3,9 +3,7 @@ import "codemirror/mode/javascript/javascript";
 
 import instrument from "./instrument";
 
-import {default as flameGraph, query as queryCalls, forEachCall, swatches} from "./flame-graph";
-window.queryCalls = queryCalls;
-window.forEachCall = forEachCall;
+import {default as FlameGraph, swatches} from "./flame-graph";
 window.swatches = swatches;
 
 import * as queryLib from "./query-lib";
@@ -35,7 +33,7 @@ var query = CodeMirror.fromTextArea($('#query'), {
     extraKeys: {
         'Ctrl-Enter': runCode
     }
-})
+});
 
 window.editor = editor;
 
@@ -125,6 +123,7 @@ const reviver = serializableReviver({
     }
 });
 
+var visualization;
 function onMessage(e) {
     switch (e.data.name) {
         case 'ERROR':
@@ -145,12 +144,12 @@ function onMessage(e) {
             console.log(trace);
             if (e.data.error != null) {
                 error(e.data.error);
-                // let error = e.data.error;
-                // $('#errors').textContent = error.toString != null ? error.toString() : JSON.toString(error)
             }
             if (trace.rootCall !== null) {
                 clear($('#visualization'));
-                flameGraph($('#visualization'), trace.calls, trace.rootCall);
+                visualization = new FlameGraph(editor, $('#visualization'), trace.calls, trace.rootCall);
+                visualization.render();
+                window.calls = visualization.data;
                 let queryCode = query.getValue();
                 try {
                     eval(queryCode);
@@ -163,4 +162,15 @@ function onMessage(e) {
     }
 }
 
+function runQuery() {
+    let queryCode = query.getValue();
+    try {
+        eval(queryCode);
+    } catch (e) {
+        error(e, 'QUERY');
+    }
+}
+
 window.editor = editor;
+
+runCode();

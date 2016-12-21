@@ -52,3 +52,21 @@ export function deepFreeze(obj) {
   // Freeze self (no-op if already frozen)
   return Object.freeze(obj);
 }
+
+export function measureX(text, fontStack, fontSize) {
+    let measure = $('#measure');
+    measure.textContent = text;
+    measure.style.fontFamily = fontStack;
+    measure.style.fontSize = fontSize;
+    
+    return measure.getBoundingClientRect().width;
+}
+
+export function measureY(text, fontStack, fontSize) {
+    let measure = $('#measure');
+    measure.textContent = text;
+    measure.style.fontFamily = fontStack;
+    measure.style.fontSize = fontSize;
+    
+    return measure.getBoundingClientRect().height;
+}

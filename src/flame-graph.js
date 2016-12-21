@@ -1,6 +1,9 @@
-import {$} from "./utils";
+import {$, deepFreeze} from "./utils";
 import * as d3 from "d3";
 window.d3 = d3;
+
+import CallWrapper from "./call-wrapper";
+import SelectionWrapper from "./selection-wrapper";
 
 // binary chop
 function wrap(width, padding) {
@@ -30,25 +33,30 @@ export default class FlameGraph {
         this.svg = svg;
         this.editor = editor;
 
-        this.calls = Object.keys(calls)
-            .map(key => calls[key])
-            .map(call => new CallWrapper(call, this))
-            .reduce((agg, b) => agg.concat(b), []);
-        this.rootCall = rootCall;
+        this.rootCall = new CallWrapper(rootCall, this);
+        let queue = [this.rootCall];
+        this.calls = [this.rootCall];
+        while (queue.length !== 0) {
+            let current = queue.shift();
+            current.children.forEach(child => {
+                queue.push(child);
+                this.calls.push(child);
+            });
+        }
 
         // assign each call a level (root is 0)
         this.levels = [];
         this.calls
             .forEach(call => {
                 if (!this.levels.hasOwnProperty(call.level)) {
-                    levels[call.level] = [];
+                    this.levels[call.level] = [];
                 }
-                levels[call.level].push(call);
+                this.levels[call.level].push(call);
             });
         
         // vertical ordering is by uid (time of call)
-        Object.keys(levels)
-            .forEach(key => levels[key].sort((a, b) => a.uid < b.uid ? -1 : a.uid === b.uid ? 0 : 1));
+        Object.keys(this.levels)
+            .forEach(key => this.levels[key].sort((a, b) => a.uid < b.uid ? -1 : a.uid === b.uid ? 0 : 1));
 
         this.styles = {
             default: {
@@ -57,21 +65,28 @@ export default class FlameGraph {
                 paddingRight: 5,
                 paddingTop: 5,
                 paddingBottom: 5,
-                marginBottom: 5,
-                marginRight: 5
+                marginBottom: 3,
+                marginRight: 0
             },
             label: {
                 fontFamily: 'Cooper Hewitt, Helvetica, Arial, sans-serif',
-                fontSize: '16px',
-                paddingBottom: 2
+                fontSize: '14px',
+                paddingBottom: 1
             },
             info: {
                 fontFamily: 'Bookerly, Input Serif, serif',
                 fontSize: '8px',
-                paddingBottom: 2
+                paddingBottom: 0
             },
             stack: {
                 fontWeight: 600
+            },
+            collapsed: {
+                width: 3,
+                minHeight: 3,
+                marginBottom: 2,
+                marginLeft: 1,
+                marginRight: 0
             }
         };
         deepFreeze(this.styles);
@@ -79,30 +94,47 @@ export default class FlameGraph {
 
     _clearCache() {
         this.calls
-            .forEach(call => call._clearCache());
+            .forEach(call => call._clearCache(null, 'collapsed'));
     }
 
     get levelWidth() {
         return this.calls
-            .reduce(agg, b => Math.max(agg, b.width), 0);
+            .reduce((agg, b) => {
+                return b.collapsed ? agg : Math.max(agg, b.width)
+            }, 0) +
+            this.styles.default.paddingRight;
     }
 
     _update() {
         let transition;
-        transition = d3.transition();
+        transition = d3.transition().duration(0);
 
         this._clearCache();
         this.rootCall.y;
 
         // level x
-        this.levels
+        this.d3levels
             .transition(transition)
-                .attr('transform', datum => `translate(${datum[0].x}, 0)`);
+                .attr('transform', (_, i) => `translate(${i * (this.levelWidth + this.styles.default.marginRight)}, 0)`);
 
         // callGroup y
         this.callGroups
             .transition(transition)
                 .attr('transform', datum => `translate(0, ${datum.y})`)
+
+        this.fullSizeCallGroups
+            .style('opacity', 1)
+            .transition(transition)
+                .style('opacity', datum => datum.collapsed ? 0 : 1)
+                .on('end', function(datum) {
+                    if (datum.collapsed) {
+                        d3.select(this)
+                            .style('visibility', 'hidden');
+                    } else {
+                        d3.select(this)
+                            .style('visibility', 'visible');
+                    }
+                });
         
         // rect height, width
         this.callRects
@@ -111,19 +143,51 @@ export default class FlameGraph {
                 .attr('height', datum => datum.height); // TODO: collapsed as a part of height
 
         // infos
-        this.callGroups
-            .select('g.info')
-            .data(datum => datum.infos)
-                .enter().append('text')
+        console.warn(this.callInfos);
+        let text = this.callInfos
+            .selectAll('text')
+            .data(function(datum){
+                return datum.infos
+            });
+            
+        text = text.enter().append('text')
+                .merge(text)
                     .text(info => info)
                     .style('font-family', this.styles.info.fontFamily)
-                    .style('font-size', this.styles.info.fontSize)
-                .exit().remove();
+                    .style('font-size', this.styles.info.fontSize);
+        
+        text.exit().remove();
+
+        this.collapsedCallGroups
+            .style('opacity', 0)
+            .transition(transition)
+                .style('opacity', datum => datum.collapsed ? 1 : 0)
+                .on('end', function(datum) {
+                    if (datum.collapsed) {
+                        d3.select(this)
+                            .style('visibility', 'visible');
+                    } else {
+                        d3.select(this)
+                            .style('visibility', 'hidden');
+                    }
+                });
+
+        this.callLines
+            .transition(transition)
+                .attr('x1', datum => datum.x)
+                .attr('x2', datum => datum.x)
+                .attr('y2', datum => datum.height)
+                .attr('transform', datum => `translate(${datum.level * -1 * (this.levelWidth + this.styles.default.marginRight)}, 0)`);
+
+        d3.select(this.svg)
+            .attr('width', this.levels.length * (this.levelWidth + this.styles.default.marginRight))
+            .attr('height', this.rootCall.height);
     }
 
     render(update = false) {
         if (update) {
             this._update();
+            return;
         }
 
         this.rootCall.y;
@@ -131,26 +195,24 @@ export default class FlameGraph {
         let that = this;
         let d3svg = d3.select(this.svg);
 
-        let levels = this.levels = d3svg
+        let levels = this.d3levels = d3svg
             .selectAll('g.level')
-            .data(this.levels)
-            .enter().append('g')
+            .data(this.levels);
+        
+        levels = this.d3levels = levels.enter().append('g')
                 .classed('level', true)
-                .attr('transform', datum => `translate(${datum[0].x}, 0)`);
+            .merge(levels)
+                .attr('transform', (_, i) => `translate(${i * (this.levelWidth + this.styles.default.marginRight)}, 0)`);
         
         let callGroups = this.callGroups = levels
             .selectAll('g.call')
-            .data(datum => datum)
-            .enter().append('g')
+            .data(datum => datum);
+
+        callGroups = this.callGroups = callGroups.enter().append('g')
                 .classed('call', true)
-                .attr('transform', datum => `translate(0, ${datum.y})`)
-                .each(function(datum) {
-                    this.datum = datum;
-                    datum.DOM = this;
-                })
                 .on('mouseover', function(datum) {
                     that.currentFunction = datum;
-                    that.markEditor(currentFunction);
+                    that.markEditor(that.currentFunction);
                     d3.select(that.currentFunction.DOM)
                         .classed('currentFunction', true);
 
@@ -169,7 +231,7 @@ export default class FlameGraph {
                         uid: that.currentFunction.uid
                     };
                 })
-                 .on('mouseout', function(datum) {
+                .on('mouseout', function(datum) {
                     that.clearEditorMarks();
                     d3.select(that.currentFunction.DOM)
                         .classed('currentFunction', false);
@@ -182,12 +244,23 @@ export default class FlameGraph {
                             .classed('callStack', false);
                         current = current.parent;
                     }
+                })
+            .merge(callGroups)
+                .attr('transform', datum => `translate(0, ${datum.y})`)
+                .each(function(datum) {
+                    this.datum = datum;
+                    datum.DOM = this;
                 });
         
         callGroups.append('svg:title')
             .text(datum => datum.fnName);
 
-        this.callRect = callGroups.append('rect')
+        let fullSizeCallGroups = this.fullSizeCallGroups = callGroups
+            .append('g')
+                .classed('fullSize', true)
+                .style('visibility', 'visible');
+
+        this.callRects = fullSizeCallGroups.append('rect')
             .attr('x', 0)
             .attr('y', 0)
             .attr('width', this.levelWidth) 
@@ -197,23 +270,39 @@ export default class FlameGraph {
             .attr('stroke-width', '1px')
             .attr('fill', 'none');
         
-        callGroups.append('text')
-            .attr('x', 5)
-            .attr('y', 15)
+        fullSizeCallGroups.append('text')
+            .classed('label', true)
+            .attr('x', this.styles.default.paddingLeft)
+            .attr('y', datum => datum._labelHeight - 2 + this.styles.default.paddingTop)
             .attr('width', this.levelWidth)
-            .attr('height', datum => datum.height(callHeight, paddingY, true))
+            .attr('height', datum => datum.height)
             .text(datum => datum.fnName)
-            .attr('font-family', 'Cooper Hewitt, input mono compressed')
+            .attr('font-family', this.styles.label.fontFamily)
+            .attr('font-size', this.styles.label.fontSize)
             .each(wrap(this.levelWidth, 2));   
 
-        callGroups.append('g')
+        this.callInfos = fullSizeCallGroups.append('g')
             .classed('info', true)
             .attr('transform', datum => `translate(${this.styles.default.paddingLeft}, ${
-                this.styles.default.paddingTop + datum._labelHeight + this.styles.label.paddingBottom
+                    this.styles.default.paddingTop + datum._labelHeight + this.styles.label.paddingBottom + parseInt(this.styles.info.fontSize)
             })`);
-        
+
+        let collapsedCallGroups = this.collapsedCallGroups = callGroups
+            .append('g')
+                .classed('collapsed', true)
+                .style('visibility', 'hidden');
+
+        this.callLines = this.collapsedCallGroups.append('line')
+            .attr('x1', datum => datum.x)
+            .attr('y1', datum => 0)
+            .attr('x2', datum =>  datum.x)
+            .attr('y2', datum => datum.height)
+            .attr('transform', datum => `translate(${datum.level * -1 * this.levelWidth}, 0)`)
+            .style('stroke-width', this.styles.collapsed.width)
+            .style('stroke', d3.hcl(0, 0, 80)); // TODO: add stroke to style
+
         d3svg
-            .attr('width', this.levels.length * (this.calls[0].width + this.styles.default.marginRight))
+            .attr('width', this.levels.length * (this.levelWidth + this.styles.default.marginRight))
             .attr('height', this.rootCall.height);
     }
 
@@ -235,7 +324,7 @@ export default class FlameGraph {
     }
 
     get data() {
-        return new SelectionWrapper(this.callGroups);
+        return new SelectionWrapper(this.callGroups, this);
     }
 }
 
