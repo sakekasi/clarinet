@@ -1,7 +1,7 @@
 import recast from "recast";
 const {builders: b} = recast.types;
 
-import {clearStmt, useStrictStmt, enterStmt, loopStmt, leaveStmt, leaveErrorStmt} from "./ast-builders";
+import {clearStmt, useStrictStmt, enterStmt, loopStmt, leaveStmt,throwStmt, catchStmt} from "./ast-builders";
 
 const {visit} = recast.types;
 
@@ -14,6 +14,8 @@ export default function instrument(inputCode) {
         });
     return instrumented;
 }
+
+var currentFunction = null;
 
 function transform(ast) {
     visit(ast, {
@@ -34,7 +36,9 @@ function transform(ast) {
         visitForInStatement: visitLoop,
 
         visitReturnStatement: visitLeave,
-        visitThrowStatement: visitLeaveError
+        visitThrowStatement: visitThrow,
+
+        visitCatchClause: visitCatchClause
     });
 
     return ast;
@@ -45,24 +49,32 @@ function visitEnter(path) {
     let node = path.node;
     let body;
     if (node.body instanceof Array) {
-        body = node.body;
+        body = path.get('body');
     } else if (node.body.constructor.name === 'BlockStatement') {
-        body = node.body.body;
+        body = path.get('body', 'body');
     }
 
     body.unshift(enterStmt(node));
     body.push(b.expressionStatement(leaveStmt()));
 
+    let oldFn = currentFunction;
+    currentFunction = node;
+
     this.traverse(path);
+
+    currentFunction = oldFn;
 }
 
 function visitLoop(path) {
     let node = path.node;
+    let body;
     if (node.body instanceof Array) {
-        node.body.unshift(loopStmt(node));
+        body = path.get('body');
     } else if (node.body.constructor.name === 'BlockStatement') {
-        node.body.body.unshift(loopStmt(node));
+        body = path.get('body', 'body');
     }
+
+    body.unshift(loopStmt(node));
     this.traverse(path);
 }
 
@@ -72,8 +84,23 @@ function visitLeave(path) {
     return this.traverse(path);
 }
 
-function visitLeaveError(path) {
+function visitThrow(path) {
     let node = path.node;
-    node.argument = leaveErrorStmt(node.argument);
+    node.argument = throwStmt(node.argument);
+    return this.traverse(path);
+}
+
+function visitCatchClause(path) {
+    let node = path.node;
+
+    let body;
+    if (node.body instanceof Array) {
+        body = path.get('body');
+    } else if (node.body.constructor.name === 'BlockStatement') {
+        body = path.get('body', 'body');
+    }
+
+    body.unshift(catchStmt(node, currentFunction));
+
     return this.traverse(path);
 }

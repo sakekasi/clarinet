@@ -1,6 +1,7 @@
 export default function SelectionWrapper(selection, parent) {
     this._parent = parent;
     this._selection = selection;
+    this.swatchIndex = 1;
     return new Proxy(this, handlers);
 }
 
@@ -41,6 +42,12 @@ SelectionWrapper.prototype.collapse = function() {
     this._parent.render(true);
     return this;
 };
+
+SelectionWrapper.prototype.nextSwatch = function() {
+    return this._selection
+        .select('rect')
+            .style('fill', swatches(this.swatchIndex++ % 6));
+}
 
 var handlers  = {
     get(target, property, receiver) {

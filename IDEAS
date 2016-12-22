@@ -1,0 +1,31 @@
+query
+-------
+* datalog-style assertions
+    * relations between members
+    * "existence" queries
+* query on syntactic things (# args written)
+
+display query
+-----------------
+* elide label
+* change label
+* minimap
+* line graph (a-la chrome profiler)
+* overlapping colors
+* icons instead of colors
+* dynamic highlighting (mouse over, show same args)
+* texture
+
+writing experience
+------------------------
+* auto-tag anonymous functions
+* boxes to turn queries on/off (like ray's tests)
+* testing interface for running (vivide, ray)
+* legend of covered aspects
+
+* data-heavy programs
+* the y-combinator
+* recursive descent parser
+* packrat parser
+
+** isError is incorrect (not all throws are bad)

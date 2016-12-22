@@ -71,7 +71,7 @@ Object.defineProperty(CallWrapper.prototype, 'width', {
         let labelWidth = measureX(this._call.fnName, this._parent.styles.label.fontFamily, this._parent.styles.label.fontSize); // TODO: measureX
         let maxInfoWidth = this.infos   
             .map(info => measureX(info, this._parent.styles.info.fontFamily, this._parent.styles.info.fontSize))
-            .reduce(Math.max, 0);
+            .reduce((agg, b) => Math.max(agg, b), 0);
 
         let width = Math.max(labelWidth, maxInfoWidth);
         if (this._parent.styles.default.maxWidth != null) {

@@ -1,4 +1,4 @@
-import {AbstractError, assert} from "./utils";
+import {AbstractError, assert, deepEquals} from "./utils";
 import {print} from "./worker-utils";
 
 const OPERATION_BUDGET = 200;
@@ -126,6 +126,8 @@ export class FnCall extends Serializable {
             args: this.args,
             uid: this.uid,
             location: this.location,
+            returnValue: this.returnValue,
+            throws: JSON.stringify(this.throws),
             isError: this.isError,
             tags: this.tags,
             parent: this.parent === null ? null : this.parent.uid,
@@ -141,6 +143,10 @@ export class FnCall extends Serializable {
         this.isError = data.isError;
         this.parent = (data.parent === null) ? null : this._lookupUid(data.parent);
         this.tags = data.tags;
+        this.returnValue = data.returnValue;
+        if (data.hasOwnProperty('throws')) {
+            this.throws = JSON.parse(data.throws);
+        }
         // this.children = data.children.map(child => this._lookupUid(child));
         if (this.parent !== null) {
             this.parent.children.push(this);
@@ -204,11 +210,21 @@ export function LOOP(location) {
     }
 }
 
-export function LEAVE(returnValue, loc, isError = false) {
+export function LEAVE(returnValue, loc) {
     state.currentCall.returnValue = returnValue;
-    state.currentCall.isError = isError;
     state.currentCall = state.currentCall.parent;
     return returnValue;
+}
+
+export function THROW(error, loc) {
+    return error;
+}
+
+export function CATCH(error, loc, fnLoc) {
+    while (!deepEquals(state.currentCall.location, fnLoc)) {
+        state.currentCall.throws = error;
+        state.currentCall = state.currentCall.parent;
+    }
 }
 
 export function CLEAR() {
@@ -261,7 +277,7 @@ export function RESETMONKEYPATCH() {
         });
 }
 
-export function TAG(key, optValue = null, optCondition = function() {return true}) {
+export function TAG(key, optValue, optCondition = function() {return true}) {
     if (optCondition()) {
         state.currentCall.tags[key] = optValue;
     }

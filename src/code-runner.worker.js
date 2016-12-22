@@ -23,9 +23,11 @@ function start(code, map) {
         }));
         self.close();
     } catch (e) {
-        if (state.currentCall !== null) {
-            state.currentCall.isError = true;
+        while (state.currentCall !== null) {
+            state.currentCall.throws = e;
+            state.currentCall = state.currentCall.parent;
         }
+
         RESETMONKEYPATCH();
         self.postMessage(new WorkerEvent('DONE', {
             trace: JSON.stringify(self.trace, serializableReplacer),

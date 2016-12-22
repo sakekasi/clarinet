@@ -100,7 +100,8 @@ export default class FlameGraph {
     get levelWidth() {
         return this.calls
             .reduce((agg, b) => {
-                return b.collapsed ? agg : Math.max(agg, b.width)
+                let ans = b.collapsed ? agg : Math.max(agg, b.width)
+                return ans;
             }, 0) +
             this.styles.default.paddingRight;
     }
@@ -143,7 +144,6 @@ export default class FlameGraph {
                 .attr('height', datum => datum.height); // TODO: collapsed as a part of height
 
         // infos
-        console.warn(this.callInfos);
         let text = this.callInfos
             .selectAll('text')
             .data(function(datum){
@@ -152,6 +152,7 @@ export default class FlameGraph {
             
         text = text.enter().append('text')
                 .merge(text)
+                    .attr('y', (_, i) => i * parseInt(this.styles.info.fontSize))
                     .text(info => info)
                     .style('font-family', this.styles.info.fontFamily)
                     .style('font-size', this.styles.info.fontSize);
@@ -179,6 +180,7 @@ export default class FlameGraph {
                 .attr('y2', datum => datum.height)
                 .attr('transform', datum => `translate(${datum.level * -1 * (this.levelWidth + this.styles.default.marginRight)}, 0)`);
 
+        console.warn(this.levels.length, this.levelWidth, this.styles.default.marginRight);
         d3.select(this.svg)
             .attr('width', this.levels.length * (this.levelWidth + this.styles.default.marginRight))
             .attr('height', this.rootCall.height);

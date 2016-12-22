@@ -42,29 +42,42 @@ export function loopStmt(node) {
 export function leaveStmt(node) {
     node = node || literal(undefined);
     let loc = node != null ? literal(node.loc) : null;
-    // LEAVE(node, false, loc)
+    // LEAVE(node, loc)
     return b.callExpression(
         b.identifier('LEAVE'),
         [
             node,
-            loc,
-            literal(false),
+            loc
         ]
     );
 }
 
-export function leaveErrorStmt(node) {
+export function throwStmt(node) {
     node = node || literal(undefined);
     let loc = node != null ? literal(node.loc) : null;
-    // LEAVE(node, true, loc)
+    // THROW(node, loc)
     return b.callExpression(
-        b.identifier('LEAVE'),
+        b.identifier('THROW'),
         [
             node,
-            loc,
-            literal(true),
+            loc
         ]
     );
+}
+
+export function catchStmt(node, fnNode) {
+    let param = node.param;
+    let nodeLoc = node != null ? literal(node.loc) : null;
+    let fnLoc = fnNode != null ? literal(fnNode.loc) : null;
+    // CATCH(nodeLoc, fnLoc)
+    return b.expressionStatement(b.callExpression(
+        b.identifier('CATCH'),
+        [
+            node.param,
+            nodeLoc,
+            fnLoc
+        ]
+    ));
 }
 
 export function literal(item) {
