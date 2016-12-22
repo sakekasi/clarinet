@@ -98,12 +98,18 @@ export default class FlameGraph {
     }
 
     get levelWidth() {
-        return this.calls
+        let width = this.calls
             .reduce((agg, b) => {
                 let ans = b.collapsed ? agg : Math.max(agg, b.width)
                 return ans;
             }, 0) +
             this.styles.default.paddingRight;
+
+        console.log(width);
+
+        return this.styles.default.maxWidth !== null ? 
+            Math.min(width, this.styles.default.maxWidth) :
+            width;
     }
 
     _update() {
@@ -155,7 +161,8 @@ export default class FlameGraph {
                     .attr('y', (_, i) => i * parseInt(this.styles.info.fontSize))
                     .text(info => info)
                     .style('font-family', this.styles.info.fontFamily)
-                    .style('font-size', this.styles.info.fontSize);
+                    .style('font-size', this.styles.info.fontSize)
+                    .each(wrap(this.levelWidth - this.styles.default.paddingLeft - this.styles.default.paddingRight, 2));
         
         text.exit().remove();
 
@@ -281,7 +288,7 @@ export default class FlameGraph {
             .text(datum => datum.fnName)
             .attr('font-family', this.styles.label.fontFamily)
             .attr('font-size', this.styles.label.fontSize)
-            .each(wrap(this.levelWidth, 2));   
+            .each(wrap(this.levelWidth - this.styles.default.paddingLeft - this.styles.default.paddingRight, 2));   
 
         this.callInfos = fullSizeCallGroups.append('g')
             .classed('info', true)

@@ -22,7 +22,7 @@ SelectionWrapper.prototype.info = function(property) {
     this._selection.each(function(datum) {
         datum.infos.push(property(datum._call))
     });
-    this.render(true);
+    //this.render(true);
     return this;
 };
 
@@ -30,7 +30,7 @@ SelectionWrapper.prototype.clearInfos = function(property) {
     this._selection.each(function(datum) {
         datum.infos = [];
     });
-    this.render(true);
+    //this.render(true);
     return this;
 };
 
@@ -39,14 +39,21 @@ SelectionWrapper.prototype.collapse = function() {
         datum.collapsed = true;
         console.warn(datum, datum.collapsed);
     });
-    this._parent.render(true);
+    //this._parent.render(true);
     return this;
 };
 
-SelectionWrapper.prototype.nextSwatch = function() {
+SelectionWrapper.prototype.refresh = function() {
+    this._parent.render(true);
+}
+
+SelectionWrapper.prototype.nextSwatch = function(index = null) {
+    if (index !== null) {
+        this.swatchIndex = index;
+    }
     return this._selection
         .select('rect')
-            .style('fill', swatches(this.swatchIndex++ % 6));
+            .style('fill', swatches((this.swatchIndex++) % 6));
 }
 
 var handlers  = {

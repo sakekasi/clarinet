@@ -74,9 +74,6 @@ Object.defineProperty(CallWrapper.prototype, 'width', {
             .reduce((agg, b) => Math.max(agg, b), 0);
 
         let width = Math.max(labelWidth, maxInfoWidth);
-        if (this._parent.styles.default.maxWidth != null) {
-            width = Math.min(width, this._parent.styles.default.maxWidth);
-        }
 
         if (this.collapsed) {
             this._width = this._parent.styles.collapsed.width;

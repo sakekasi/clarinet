@@ -53,20 +53,36 @@ export function deepFreeze(obj) {
   return Object.freeze(obj);
 }
 
+var memoMeasureX = {};
 export function measureX(text, fontStack, fontSize) {
+    if ([text, fontStack, fontSize].toString() in memoMeasureX) {
+        console.error('MEMO');
+        return memoMeasureX[[text, fontStack, fontSize]];
+    }
+
     let measure = $('#measure');
     measure.textContent = text;
     measure.style.fontFamily = fontStack;
     measure.style.fontSize = fontSize;
     
-    return measure.getBoundingClientRect().width;
+    let ans = measure.getBoundingClientRect().width;
+    memoMeasureX[[text, fontStack, fontSize]] = ans;
+    return ans;
 }
 
+var memoMeasureY = {};
 export function measureY(text, fontStack, fontSize) {
+    if ([text, fontStack, fontSize].toString() in memoMeasureY) {
+        console.error('MEMO');
+        return memoMeasureY[[text, fontStack, fontSize]];
+    }
+
     let measure = $('#measure');
     measure.textContent = text;
     measure.style.fontFamily = fontStack;
     measure.style.fontSize = fontSize;
     
-    return measure.getBoundingClientRect().height;
+    let ans = measure.getBoundingClientRect().height;
+    memoMeasureY[[text, fontStack, fontSize]] = ans;
+    return ans;
 }

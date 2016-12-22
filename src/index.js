@@ -153,6 +153,7 @@ function onMessage(e) {
                 let queryCode = query.getValue();
                 try {
                     eval(queryCode);
+                    calls.refresh();
                 } catch (e) {
                     error(e, 'QUERY');
                 }
@@ -166,6 +167,7 @@ function runQuery() {
     let queryCode = query.getValue();
     try {
         eval(queryCode);
+        calls.refresh();
     } catch (e) {
         error(e, 'QUERY');
     }

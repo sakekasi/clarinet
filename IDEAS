@@ -29,3 +29,8 @@ writing experience
 * packrat parser
 
 ** isError is incorrect (not all throws are bad)
+
+performance
+-----------------
+
+calculate x, y, w, h from bottom up, memoized
