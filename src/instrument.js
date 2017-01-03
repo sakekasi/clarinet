@@ -45,7 +45,6 @@ function transform(ast) {
 }
 
 function visitEnter(path) {
-    console.error(path);
     let node = path.node;
     let body;
     if (node.body instanceof Array) {

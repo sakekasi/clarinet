@@ -25,6 +25,7 @@ export function enterStmt(fnDecl) {
             b.literal(name),
             name === 'anonymous' ? literal(null) : b.identifier(name),
             b.identifier('arguments'),
+            b.identifier('this'),
             loc
         ]
     ));

@@ -56,7 +56,6 @@ export function deepFreeze(obj) {
 var memoMeasureX = {};
 export function measureX(text, fontStack, fontSize) {
     if ([text, fontStack, fontSize].toString() in memoMeasureX) {
-        console.error('MEMO');
         return memoMeasureX[[text, fontStack, fontSize]];
     }
 
@@ -73,7 +72,6 @@ export function measureX(text, fontStack, fontSize) {
 var memoMeasureY = {};
 export function measureY(text, fontStack, fontSize) {
     if ([text, fontStack, fontSize].toString() in memoMeasureY) {
-        console.error('MEMO');
         return memoMeasureY[[text, fontStack, fontSize]];
     }
 

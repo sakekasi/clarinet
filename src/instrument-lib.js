@@ -80,13 +80,14 @@ export class ExecutionState {
 }
 
 export class FnCall extends Serializable {
-    constructor(fnName, parent, args, location) {
+    constructor(fnName, parent, args, receiver, location) {
         super();
         this.location = location;
         this.isError = false;
         this.tags = {};
-        this.fnName = fnName;
+        this.fnName = fnName.replace(new RegExp('[$]', 'g'), '.');
         this.args = Array.prototype.slice.call(args);
+        if (receiver !== undefined) { this.receiver = receiver; }
         
         this.uid = state.nextUid++;
 
@@ -130,6 +131,7 @@ export class FnCall extends Serializable {
             throws: JSON.stringify(this.throws),
             isError: this.isError,
             tags: this.tags,
+            receiver: Object.assign({}, this.receiver), // TODO: this is terrible :(
             parent: this.parent === null ? null : this.parent.uid,
             children: this.children.map(child => child.uid)
         }
@@ -143,6 +145,7 @@ export class FnCall extends Serializable {
         this.isError = data.isError;
         this.parent = (data.parent === null) ? null : this._lookupUid(data.parent);
         this.tags = data.tags;
+        if (data.hasOwnProperty('receiver')) { this.receiver = data.receiver; }
         this.returnValue = data.returnValue;
         if (data.hasOwnProperty('throws')) {
             this.throws = JSON.parse(data.throws);
@@ -186,7 +189,7 @@ export function serializableReviver(classes = {
 self.trace = new ExecutionTrace();
 self.state = new ExecutionState();
 
-export function ENTER(fnName, fn, args, location) {
+export function ENTER(fnName, fn, args, receiver, location) {
     if (--state.operationBudget === 0) {
         throw new OperationBudgetExceeded(location);
     }
@@ -196,7 +199,7 @@ export function ENTER(fnName, fn, args, location) {
     }
 
 
-    let call = new FnCall(fnName, state.currentCall, args, location);
+    let call = new FnCall(fnName, state.currentCall, args, receiver, location);
     if (Object.keys(trace.calls).length === 0) {
         trace.rootCall = call;
     }

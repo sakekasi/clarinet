@@ -37,7 +37,6 @@ SelectionWrapper.prototype.clearInfos = function(property) {
 SelectionWrapper.prototype.collapse = function() {
     this._selection.each(function(datum) {
         datum.collapsed = true;
-        console.warn(datum, datum.collapsed);
     });
     //this._parent.render(true);
     return this;

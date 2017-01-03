@@ -76,7 +76,7 @@ export default class FlameGraph {
             info: {
                 fontFamily: 'Bookerly, Input Serif, serif',
                 fontSize: '8px',
-                paddingBottom: 0
+                paddingBottom: 2
             },
             stack: {
                 fontWeight: 600
@@ -104,8 +104,6 @@ export default class FlameGraph {
                 return ans;
             }, 0) +
             this.styles.default.paddingRight;
-
-        console.log(width);
 
         return this.styles.default.maxWidth !== null ? 
             Math.min(width, this.styles.default.maxWidth) :
@@ -158,7 +156,7 @@ export default class FlameGraph {
             
         text = text.enter().append('text')
                 .merge(text)
-                    .attr('y', (_, i) => i * parseInt(this.styles.info.fontSize))
+                    .attr('y', (_, i) => i * (parseInt(this.styles.info.fontSize) + this.styles.info.paddingBottom))
                     .text(info => info)
                     .style('font-family', this.styles.info.fontFamily)
                     .style('font-size', this.styles.info.fontSize)
@@ -187,7 +185,6 @@ export default class FlameGraph {
                 .attr('y2', datum => datum.height)
                 .attr('transform', datum => `translate(${datum.level * -1 * (this.levelWidth + this.styles.default.marginRight)}, 0)`);
 
-        console.warn(this.levels.length, this.levelWidth, this.styles.default.marginRight);
         d3.select(this.svg)
             .attr('width', this.levels.length * (this.levelWidth + this.styles.default.marginRight))
             .attr('height', this.rootCall.height);

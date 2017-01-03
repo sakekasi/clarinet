@@ -9,26 +9,26 @@ calls
 	.selectAll('text')
 		.style('fill', 'red');
 
-calls.query(call => call.fnName === 'GrammarParse')
+calls.query(call => call.fnName === 'Grammar.parse')
 	.forEach(call => console.log(call))
 	.info(call => JSON.stringify(call.args[0]));
 
-calls.query(call => call.fnName === 'GrammarParseRule')
+calls.query(call => call.fnName === 'Grammar.parseRule')
 	.info(call => call.args[1] + ' ; ' + call.tags.bodyType);
 
-calls.query(call => call.fnName === 'GrammarAddRule')
+calls.query(call => call.fnName === 'Grammar.addRule')
 	.info(call => call.args[0]);
 
 calls.query(call => 'undefinedThis' in call.tags)
 	.nextSwatch(1)
 
-calls.query(call => call.fnName === 'InputStreamConsumeChar' || call.fnName === 'InputStreamConsume')
+calls.query(call => (call.fnName === 'InputStream.consumeChar' || call.fnName === 'InputStream.consume') && !call.throws)
 	.nextSwatch(3)
 
-calls.query(call => call.fnName === 'InputStreamConsumeChar')
+calls.query(call => call.fnName === 'InputStream.consumeChar')
 	.info(call => call.args[0]);
 
-calls.query(call => call.fnName === 'InputStreamConsume')
+calls.query(call => call.fnName === 'InputStream.consume')
 	.info(call => call.tags.nextChar || 'undefined');
 
 var astConstructors = ['nonTerminal', 'terminal', 'seq', 'choice', 'range', 'epsilon'];
@@ -37,7 +37,7 @@ calls.query(call => astConstructors.includes(call.fnName))
 	.select('line')
 		.style('stroke', swatches(2));
 
-var toStrings = ['ConsumeErrorToString', 'ParseErrorToString'];
+var toStrings = ['ConsumeError.toString', 'ParseError.toString'];
 calls.query(call => toStrings.includes(call.fnName))
 	.collapse()
 	.select('line')
@@ -62,14 +62,14 @@ alt -> try to consume 1st. if error, reset; consume next and so on
 */
 
 function ConsumeError(message) { this.message = message; }
-ConsumeError.prototype.toString = function ConsumeErrorToString() { return this.message; }
+ConsumeError.prototype.toString = function ConsumeError$toString() { return this.message; }
 
 function InputStream(string) {
   this.data = string;
   this.position = 0;
 }
 
-InputStream.prototype.consumeChar = function InputStreamConsumeChar(char) {
+InputStream.prototype.consumeChar = function InputStream$consumeChar(char) {
   if (this.finished()) { throw new ConsumeError('cant consume finished stream'); }
   
   var nextChar;
@@ -83,7 +83,7 @@ InputStream.prototype.consumeChar = function InputStreamConsumeChar(char) {
   return nextChar;
 };
 
-InputStream.prototype.consume = function InputStreamConsume() {
+InputStream.prototype.consume = function InputStream$consume() {
   if (this.finished()) { throw new ConsumeError('cant consume finished stream'); }
   
   var nextChar;
@@ -95,7 +95,7 @@ InputStream.prototype.consume = function InputStreamConsume() {
   return nextChar;
 };
 
-InputStream.prototype.finished = function InputStreamFinished() {
+InputStream.prototype.finished = function InputStream$finished() {
   TAG('position', this.position);
   TAG('dataLength', this.data.length);
   return this.position >= this.data.length;
@@ -104,17 +104,17 @@ InputStream.prototype.finished = function InputStreamFinished() {
 // --------------------------
 
 function ParseError(message) { this.message = message; }
-ParseError.prototype.toString = function ParseErrorToString() { return this.message; }
+ParseError.prototype.toString = function ParseError$toString() { return this.message; }
 
 function Grammar() {
   this.rules = {};
 }
 
-Grammar.prototype.addRule = function GrammarAddRule(nonterminalName, value) {
+Grammar.prototype.addRule = function Grammar$addRule(nonterminalName, value) {
   this.rules[nonterminalName] = value;
 };
 
-Grammar.prototype.parse = function GrammarParse(input, startRule) {
+Grammar.prototype.parse = function Grammar$parse(input, startRule) {
   var stream = new InputStream(input);
   var ans = this.parseRule(stream, startRule);
   if (!stream.finished()) {
@@ -123,7 +123,7 @@ Grammar.prototype.parse = function GrammarParse(input, startRule) {
   return ans;
 };
 
-Grammar.prototype.parseRule = function GrammarParseRule(stream, ruleName) {
+Grammar.prototype.parseRule = function Grammar$parseRule(stream, ruleName) {
   if (!ruleName in this.rules) {
     throw new ParseError(ruleName + ' isnt in the grammar');
   }
@@ -138,12 +138,12 @@ Grammar.prototype.parseRule = function GrammarParseRule(stream, ruleName) {
 
 // returns an array of children
 Grammar.parseNode = {
-  nonterminal: function GrammarParseNonTerminal(stream, nonterminal) {
+  nonterminal: function Grammar$parseNonTerminal(stream, nonterminal) {
     if (this === null || this === undefined) { TAG('undefinedThis', true); }
     return [this.parseRule(stream, nonterminal.name)];
   },
   
-  terminal: function GrammarParseTerminal(stream, terminal) {
+  terminal: function Grammar$parseTerminal(stream, terminal) {
     if (this === null || this === undefined) { TAG('undefinedThis', true); }
     var characters = terminal.value.split('');
     for (var i = 0; i < characters.length; i++) {
@@ -153,7 +153,7 @@ Grammar.parseNode = {
     return [Object.assign({}, terminal)];
   },
   
-  choice: function GrammarParseChoice(stream, choice) {
+  choice: function Grammar$parseChoice(stream, choice) {
     if (this === null || this === undefined) { TAG('undefinedThis', true); }
     var oldPosition = stream.position;
     for (var i = 0; i < choice.options.length; i++) {
@@ -173,7 +173,7 @@ Grammar.parseNode = {
     throw new ParseError('reached the end of a choice node');
   },
   
-  seq: function GrammarParseSeq(stream, seq) {
+  seq: function Grammar$parseSeq(stream, seq) {
     if (this === null || this === undefined) { TAG('undefinedThis', true); }
     var ans = [];
     for (var i = 0; i < seq.factors.length; i++) {
@@ -183,7 +183,7 @@ Grammar.parseNode = {
     return ans;
   },
   
-  range: function GrammarParseRange(stream, range) {
+  range: function Grammar$parseRange(stream, range) {
     var char = stream.consume();
     if (char.charCodeAt(0) >= range.start.charCodeAt(0) &&
         char.charCodeAt(0) <= range.end.charCodeAt(0)) {
@@ -193,7 +193,7 @@ Grammar.parseNode = {
     }
   },
   
-  epsilon: function GrammarParseEpsilon(stream, range) {
+  epsilon: function Grammar$parseEpsilon(stream, range) {
     return [{type: epsilon}];
   }
 }
@@ -270,9 +270,9 @@ function TOPLEVEL() {
   Arithmetic.addRule('number', range('0', '9'));
   
   var examples = [
-    //'1 + 2',
-    //'1 +  ',
-    '3 - 3 + 2 + 1',
+    '1 + 2',
+    '1 +  ',
+    //'3 - 3 + 2 + 1',
     '1'
   ];
   
