@@ -87,7 +87,7 @@ export class FnCall extends Serializable {
         this.tags = {};
         this.fnName = fnName.replace(new RegExp('[$]', 'g'), '.');
         this.args = Array.prototype.slice.call(args);
-        if (receiver !== undefined) { this.receiver = receiver; }
+        if (receiver !== undefined) { this.receiver = Object.assign({}, receiver); }
         
         this.uid = state.nextUid++;
 
@@ -131,7 +131,7 @@ export class FnCall extends Serializable {
             throws: JSON.stringify(this.throws),
             isError: this.isError,
             tags: this.tags,
-            receiver: Object.assign({}, this.receiver), // TODO: this is terrible :(
+            receiver: this.receiver, // TODO: this is terrible :(
             parent: this.parent === null ? null : this.parent.uid,
             children: this.children.map(child => child.uid)
         }
