@@ -4,6 +4,13 @@ window.d3 = d3;
 
 import CallWrapper from "./call-wrapper";
 import SelectionWrapper from "./selection-wrapper";
+import colorGraph from "./graph-color";
+
+const defaultSwatchesChroma = 10;
+const defaultSwatchesLightness = 100;
+
+const userSwatchesChroma = 30;
+const userSwatchesLightness = 85;
 
 // binary chop
 function wrap(width, padding) {
@@ -27,6 +34,54 @@ function wrap(width, padding) {
     };
 } 
 
+function makeColoringGraph(node, graph) {
+    if (!graph.hasOwnProperty(node.fnName)) {
+        graph[node.fnName] = [];
+    }
+
+    node.children.forEach((child, i, children) => {
+        if (!graph.hasOwnProperty(child.fnName)) {
+            graph[child.fnName] = [];
+        }
+
+        if (child.fnName !== node.fnName) {
+            graph[child.fnName].push(node.fnName);
+            graph[node.fnName].push(child.fnName);
+        }
+
+        if (i !== 0 && children[i-1].fnName !== child.fnName) {
+            graph[child.fnName].push(node.children[i-1].fnName)
+        }
+
+        if (i !== children.length - 1 && children[i+1].fnName !== child.fnName) {
+            graph[child.fnName].push(node.children[i+1].fnName)
+        }
+
+        makeColoringGraph(child, graph);
+    });
+    
+    Object.keys(graph)
+        .forEach(v => {
+            graph[v] = unique(graph[v]);
+        });
+
+    return graph;
+}
+
+function unique(array) {
+    return array
+        .filter((item, i, arr) => {
+            return !(arr.slice(0, i).includes(item));
+        });
+}
+
+function shuffle(a) {
+    for (let i = a.length; i; i--) {
+        let j = Math.floor(Math.random() * i);
+        [a[i - 1], a[j]] = [a[j], a[i - 1]];
+    }
+}
+
 export default class FlameGraph {
     constructor(editor, svg, calls, rootCall) {
         this.currentFunction = null;
@@ -43,6 +98,19 @@ export default class FlameGraph {
                 this.calls.push(child);
             });
         }
+
+        this.functions = Object.keys(calls);
+        let {allocation, max: numColors} = colorGraph(makeColoringGraph(this.rootCall, {}));
+
+        this.functionColorAllocation = allocation;
+
+        this.defaultSwatches = d3.scaleLinear()
+            .domain([1, this.functions.length + this.functions.length])//numColors+1])
+            .range([
+                d3.hcl(0, defaultSwatchesChroma, defaultSwatchesLightness), 
+                d3.hcl(360, defaultSwatchesChroma, defaultSwatchesLightness)
+            ])
+            .interpolate(d3.interpolateHclLong);
 
         // assign each call a level (root is 0)
         this.levels = [];
@@ -274,7 +342,8 @@ export default class FlameGraph {
             .attr('height', datum => datum.height)
             .attr('stroke', d3.hcl(0, 0, 80))
             .attr('stroke-width', '1px')
-            .attr('fill', 'none');
+            .attr('fill', datum => this.defaultSwatches(this.functions.indexOf(datum.fnName)));//this.defaultSwatches(this.functionColorAllocation[datum.fnName]));//this.defaultSwatches(this.functions.indexOf(datum.fnName)));
+            //.attr('fill', 'none');
         
         fullSizeCallGroups.append('text')
             .classed('label', true)
@@ -335,7 +404,11 @@ export default class FlameGraph {
 }
 
 
+
 export var swatches = d3.scaleLinear()
     .domain([1, 7])
-    .range([d3.hcl(0, 30, 90), d3.hcl(360, 30, 90)])
+    .range([
+        d3.hcl(0, userSwatchesChroma, userSwatchesLightness), 
+        d3.hcl(360, userSwatchesChroma, userSwatchesLightness)
+    ])
     .interpolate(d3.interpolateHclLong);

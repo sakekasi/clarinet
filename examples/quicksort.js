@@ -1,30 +1,9 @@
-queryCalls(call => call.isError).select('text').style('fill', 'red');
-queryCalls(call => 'list' in call.tags)
-	.select('g.info')
-	.append('text')
-		.text(call => call.tags.list
-              .map((item, i) => ((i === call.tags.start) || (i === call.tags.end-1)) ? '*'+item+'*' : item)
-        )
-		.style('font-size', '8px')
-		.style('font-family', 'Bookerly');
+calls
+	.query(call => call.isError).select('text').style('fill', 'red');
 
-let partitionInfo = queryCalls(call => 'before' in call.tags)
-	.select('g.info');
-partitionInfo
-	.append('text')
-		.text(call => call.tags.before
-           	.map((item, i) => ((i === call.args[1]) || (i === call.args[2]-1)) ? '*'+item+'*' : item)
-        )
-		.style('font-size', '8px')
-		.style('font-family', 'Bookerly');
-partitionInfo
-	.append('text')
-		.text(call => call.tags.after
-           	.map((item, i) => ((i === call.args[1]) || (i === call.args[2]-1)) ? '*'+item+'*' : item)
-        )
-		.style('font-size', '8px')
-		.style('font-family', 'Bookerly')
-		.attr('transform', 'translate(0, 10)');
+calls
+	.query(call => 'list' in call.tags)
+	.info(call => call.tags.list.map((item, i) => ((i === call.tags.start) || (i === call.tags.end-1)) ? '*'+item+'*' : item));
 
 //-----------------------------------------
 
