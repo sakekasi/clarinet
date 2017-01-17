@@ -3,16 +3,22 @@
     <head>
         <link rel="stylesheet" href="jspm_packages/npm/codemirror@5.21.0/lib/codemirror.css"/>
         <link rel="stylesheet" href="stylesheets/grayscale.css"/>
+        <link rel="stylesheet" href="stylesheets/reset.css"/>
         <style>
             body {
                 display: flex;
                 flex-direction: row;
-                font-family: "cooper hewitt", Helvetica, Arial, sans-serif;
+                font-family: Helvetica, Arial, sans-serif;
+                padding-top: 5px;
             }
 
             body > * {
                 flex: 1;
                 height: 100%;
+            }
+
+            body > *:not(:last-child) {
+                margin-right: 5px;
             }
 
              .CodeMirror {
@@ -25,6 +31,11 @@
                 display: flex;
                 flex-direction: column;
                 width: 50vw;
+            }
+
+            #editorColumnContainer {
+                overflow: auto;
+                height: 100vh;
             }
 
             #log li.error {
@@ -98,6 +109,7 @@
                 display: inline-flex;
                 flex-direction: column;
                 width: auto;
+                padding: 5px;
             }
 
             #visualization > .call > .contents {
@@ -127,6 +139,7 @@
         <div id="visualizationContainer">
             <div id="visualization"></div>
         </div>
+        <div id="editorColumnContainer">
         <div id="editorColumn">
             <ul id="log"></ul>
             <textarea id="query">
@@ -154,6 +167,7 @@ function fib(x) {
 
 fib(5);
             </textarea>
+        </div>
         </div>
         <script src="jspm_packages/system.js"></script>
         <script src="config.js"></script>

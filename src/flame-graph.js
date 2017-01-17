@@ -216,7 +216,7 @@ export default class FlameGraph {
 }
 
 function markEditor(editor, fn) {
-    if (fn.location === null) {
+    if (fn.location == null) {
         return;
     }
 
