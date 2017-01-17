@@ -4,6 +4,8 @@
         <link rel="stylesheet" href="jspm_packages/npm/codemirror@5.21.0/lib/codemirror.css"/>
         <link rel="stylesheet" href="stylesheets/grayscale.css"/>
         <link rel="stylesheet" href="stylesheets/reset.css"/>
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
         <style>
             body {
                 display: flex;
@@ -21,7 +23,7 @@
                 margin-right: 5px;
             }
 
-             .CodeMirror {
+            .CodeMirror {
                 border: 1px solid hsl(0, 0%, 90%);
                 height: auto;
                 width: 100%;
@@ -36,6 +38,14 @@
             #editorColumnContainer {
                 overflow: auto;
                 height: 100vh;
+            }
+
+            #log ul {
+                list-style-type: disc;
+            }
+
+            #log li {
+                margin-left: 15px;
             }
 
             #log li.error {
@@ -143,9 +153,34 @@
         <div id="editorColumn">
             <ul id="log"></ul>
             <textarea id="query">
-queryCalls(call => call.isError).select('text').style('fill', 'red');
-var sameArgs = queryCalls(callsWithSameArgument('fib'));
-sameArgs.select('rect').style('fill', swatches(0));
+calls
+	.query(call => call.isError)
+	.select('.label')
+		.style('color', 'red');
+
+var sameArgs = {};
+var argSets = [];
+
+calls
+    .query(call => call.fnName === 'fib')
+	.forEach(call => {
+    	let c = argSets.find(c => deepEquals(c.args, call.args));
+		if (c !== undefined) {
+            sameArgs[c.uid] = true;
+            sameArgs[call.uid] = true;
+    	} else {
+			sameArgs[call.uid] = false;
+            argSets.push(call);
+        }
+	});
+
+calls
+	.query(call => sameArgs[call.uid])
+//	.style('background-color', swatches(6));
+
+calls
+	.query(call => call.fnName === 'fib')
+    .info(call => call.args[0]);
             </textarea>
             <textarea id="editor">
 var memo = {};

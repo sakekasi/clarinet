@@ -117,7 +117,7 @@ Grammar.prototype.parse = function Grammar$parse(input, startRule) {
   var stream = new InputStream(input);
   var ans = this.parseRule(stream, startRule);
   if (!stream.finished()) {
-    throw new ParseError('stream not fully consumed. ' + JSON.stringify(stream.data.slice(stream.position)) + 'was left over');
+    throw new ParseError('stream not fully consumed. ' + JSON.stringify(stream.data.slice(stream.position)) + ' was left over');
   }
   return ans;
 };

@@ -11,11 +11,13 @@ Object.assign(window, queryLib);
 
 import CodeRunner from "./code-runner.worker.js!worker";
 import {WorkerEvent} from "./worker-utils";
-import {$, clear} from "./utils";
+import {$, clear, deepEquals} from "./utils";
 import {serializableReviver, ExecutionTrace, ExecutionState, FnCall} from "./instrument-lib";
 
 import recast from "recast";
 window.recast = recast;
+
+window.deepEquals = deepEquals;
 
 var editor = CodeMirror.fromTextArea($('#editor'), {
     lineNumbers: true,
