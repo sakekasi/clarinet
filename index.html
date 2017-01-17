@@ -12,6 +12,7 @@
 
             body > * {
                 flex: 1;
+                height: 100%;
             }
 
              .CodeMirror {
@@ -23,8 +24,7 @@
             #editorColumn {
                 display: flex;
                 flex-direction: column;
-                width: 50%;
-                margin-left: 50%;
+                width: 50vw;
             }
 
             #log li.error {
@@ -38,28 +38,94 @@
 
             #visualizationContainer {
                 overflow: auto;
-                position: fixed;
-                width: 50%;
-                height: 100%;
+                /*position: fixed;*/
+                width: 50vw;
             }
 
             .highlight {
                 background-color: hsl(57, 81.7%, 95%);
             }
 
-            #measure {
+            /*#measure {
                 position: fixed;
                 top: 100%;
             }
 
             text {
                 text-rendering: optimizeLegibility;
+            }*/
+
+            /*-------------------*/
+
+            .contents {
+                padding: 5px;
+                padding-left: 0px;
+                border: 1px solid hsl(0, 0%, 0%);
+                border-top: none;
+                overflow-x: hidden;
+                background-color: rgba(245,245,220, .15);
             }
+
+            .contents.collapsed > * {
+                display: none;
+            }
+
+            .contents.collapsed {
+                border: 2px solid black;
+                padding: 0px;
+            }
+
+            .label {
+                display: inline-block;
+                font-family: Fira Sans, Helvetica, Arial, sans-serif;
+                position: relative;
+                left: 0px;
+                white-space: pre;
+                padding-left: 5px;
+                transition: left 0.1s ease;
+            }
+
+            .infos {
+                margin: 0px;
+                margin-left: 5px;
+                list-style-type: none;
+                font-family: Signika, Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                padding: 0px;
+            }
+
+            #visualization {
+                display: inline-flex;
+                flex-direction: column;
+                width: auto;
+            }
+
+            #visualization > .call > .contents {
+                border-top: 1px solid hsl(0, 0%, 0%);
+            }
+
+            .call {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .call > .children {
+                display: flex
+            }
+
+            .call:not(:last-child) {
+                margin-right: 2px;
+            }
+
+            .call.callStack > .contents {
+                font-weight: bold;
+            }
+
         </style>
     </head>
     <body>
         <div id="visualizationContainer">
-            <svg id="visualization"></svg>
+            <div id="visualization"></div>
         </div>
         <div id="editorColumn">
             <ul id="log"></ul>
@@ -89,7 +155,6 @@ function fib(x) {
 fib(5);
             </textarea>
         </div>
-        <div id="measure"></div>
         <script src="jspm_packages/system.js"></script>
         <script src="config.js"></script>
         <script>

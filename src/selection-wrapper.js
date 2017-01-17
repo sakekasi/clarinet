@@ -1,85 +1,66 @@
-export default function SelectionWrapper(selection, parent) {
-    this._parent = parent;
-    this._selection = selection;
-    this.swatchIndex = 1;
-    return new Proxy(this, handlers);
-}
+import {delegate} from "./utils";
 
-SelectionWrapper.prototype.forEach = function(fn) {
-    this._selection.each(function(datum) {
-        return fn(this.datum._call);
-    });
-    return this;
-}
+export default class SelectionWrapper {
+    constructor(selection, visualization) {
+        this._selection = selection;
+        this._visualization = visualization;
+        this.swatchIndex = 1;
 
-SelectionWrapper.prototype.query = function(predicate) {
-    return new SelectionWrapper(this._selection
-        .filter(function(datum) { return predicate(this.datum._call); }),
-        this._parent);
-};
-
-SelectionWrapper.prototype.info = function(property) {
-    this._selection.each(function(datum) {
-        datum.infos.push(property(datum._call))
-    });
-    //this.render(true);
-    return this;
-};
-
-SelectionWrapper.prototype.clearInfos = function(property) {
-    this._selection.each(function(datum) {
-        datum.infos = [];
-    });
-    //this.render(true);
-    return this;
-};
-
-SelectionWrapper.prototype.collapse = function() {
-    this._selection.each(function(datum) {
-        datum.collapsed = true;
-    });
-    //this._parent.render(true);
-    return this;
-};
-
-SelectionWrapper.prototype.refresh = function() {
-    this._parent.render(true);
-}
-
-SelectionWrapper.prototype.nextSwatch = function(index = null) {
-    if (index !== null) {
-        this.swatchIndex = index;
+        this._proxy = new Proxy(this,
+            delegate(this, ['_selection', '_visualization'])
+        );
+        return this._proxy;
     }
-    return this._selection
-        .select('rect')
-            .style('fill', swatches((this.swatchIndex++) % 6));
-}
 
-var handlers  = {
-    get(target, property, receiver) {
-        if (property in target) {
-            return target[property];
-        } else if (property in target._selection) { // delegate to selection
-            return target._selection[property];
-        } else if (property in target._parent) {
-            return target._parent[property];
-        }
-    },
-    
-    has(target, property) {
-        return propery in target || (property in target._selection) || (property in target._parent);
-    },
-    
-    set(target, property, value, receiver) {
-        if (property in target) {
-            target[property] = value;
-        } else if (property in target._selection) { // delegate to selection
-            target._selection[property] = value;
-        } else if (property in target._parent) {
-            target._parent[property] = value;
-        } else {
-            target[property] = value;
-        }
-        return true;
+    refresh() {
+        this._visualization.update();
     }
-};
+
+    query(predicate) {
+        return new SelectionWrapper(
+            this._selection
+                .filter(function(wrapped) { return predicate(wrapped._call); }),
+            this._visualization
+        );
+    }
+
+    forEach(fn) {
+        this._selection
+            .each(function(wrapped) { return fn(wrapped._call); });
+        return this;
+    }
+
+    info(property) {
+        this._selection
+            .each(function(wrapped) { wrapped.infos.push(property(wrapped._call)); });
+        return this;
+    }
+
+    clearInfos() {
+        this._selection
+            .each(function(wrapped) { wrapped.infos = []; });
+        return this;
+    }
+
+    collapse(collapsed = true) {
+        this._selection
+            .each(function(wrapped) { wrapped.collapsed = collapsed; });
+        return this;
+    }
+
+    collapseAll(collapsed = true) {
+        this._selection
+            .each(function(wrapped) {
+            breadthFirstTraversal(wrapped, function(node) { node.collapsed = collapsed; })
+            });
+        return this;
+    }
+
+    nextSwatch(index = null) {
+        if (index !== null) {
+            this.swatchIndex = index;
+        }
+        return this._selection
+            .style('background-color', swatches((this.swatchIndex++) % 6));
+    }
+}

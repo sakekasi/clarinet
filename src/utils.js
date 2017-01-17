@@ -84,3 +84,74 @@ export function measureY(text, fontStack, fontSize) {
     memoMeasureY[[text, fontStack, fontSize]] = ans;
     return ans;
 }
+
+export function depthFirstTraversal(tree, fn) {
+  let stack = [tree];
+  while (stack.length !== 0) {
+    let current = stack.pop();
+    stack = stack.concat(current.children);
+    fn(current);
+  }
+}
+
+export function breadthFirstTraversal(tree, fn) {
+  let queue = [tree];
+  while (queue.length !== 0) {
+    let current = queue.shift();
+    queue = queue.concat(current.children);
+    fn(current);
+  }
+}
+
+export function delegate(object, parentProperties) {
+  return {
+    get(target, property, receiver) {
+      if (property in target) {
+        return target[property];
+      } else {
+        let currentParentIdx = 0;
+        while (
+          currentParentIdx < parentProperties.length &&
+          !(property in object[parentProperties[currentParentIdx]])
+        ) {
+          currentParentIdx++;
+        }
+
+        if (currentParentIdx < parentProperties.length) {
+          return object[parentProperties[currentParentIdx]][property];
+        }
+      }
+    },
+
+    has(target, property) {
+      if (property in target) {
+        return true;
+      } else {
+        let currentParentIdx = 0;
+        while(
+          currentParentIdx < parentProperties.length &&
+          !(property in object[parentProperties[currentParentIdx]])
+        ) {
+          currentParentIdx++;
+        }
+
+        return currentParentIdx < parentProperties.length;
+      }
+    }
+  }
+}
+
+export function DOM(nodeType, ...children) {
+  nodeType = nodeType.split('.');
+  let element = document.createElement(nodeType[0]);
+
+  if (nodeType.length > 1) {
+    element.classList.add(nodeType[1]);
+  }
+
+  children
+    .map(child => typeof child === 'string' ? document.createTextNode(child) : child)
+    .forEach(child => element.appendChild(child));
+
+  return element;
+}

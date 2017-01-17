@@ -6,8 +6,8 @@ calls
 calls.refresh();
 calls
 	.query(call => call.hasOwnProperty('throws'))
-	.selectAll('text')
-		.style('fill', 'red');
+	.selectAll('.label')
+		.style('color', 'red');
 
 calls.query(call => call.fnName === 'Grammar.parse')
 	.forEach(call => console.log(call))
@@ -34,22 +34,21 @@ calls.query(call => call.fnName === 'InputStream.consume')
 var astConstructors = ['nonTerminal', 'terminal', 'seq', 'choice', 'range', 'epsilon'];
 calls.query(call => astConstructors.includes(call.fnName))
 	.collapse()
-	.select('line')
-		.style('stroke', swatches(2));
+	.style('border-color', swatches(2));
 
 var toStrings = ['ConsumeError.toString', 'ParseError.toString'];
 calls.query(call => toStrings.includes(call.fnName))
 	.collapse()
-	.select('line')
-		.style('stroke', swatches(5));
+	.style('border-color', swatches(5));
 
 calls.query(call => call.fnName === 'console.log' && call.parent.fnName !== 'TOPLEVEL')
 	.collapse()
-	.select('line')
-		.style('stroke', swatches(6));
+	.style('border-color', swatches(6));
 
 calls.query(call => call.tags.backtracked)
 	.nextSwatch(5);
+
+calls.query(call => call.fnName === 'InputStream.finished' || call.fnName === 'ConsumeError').collapse();
 
 // --------------------------
 

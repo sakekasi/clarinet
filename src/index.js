@@ -147,7 +147,7 @@ function onMessage(e) {
             }
             if (trace.rootCall !== null) {
                 clear($('#visualization'));
-                visualization = new FlameGraph(editor, $('#visualization'), trace.calls, trace.rootCall);
+                visualization = new FlameGraph($('#visualization'), editor, trace.rootCall);
                 visualization.render();
                 window.calls = visualization.data;
                 let queryCode = query.getValue();
