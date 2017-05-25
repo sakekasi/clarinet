@@ -9,7 +9,7 @@ window.swatches = swatches;
 import * as queryLib from "./query-lib";
 Object.assign(window, queryLib);
 
-import CodeRunner from "./code-runner.worker.js!worker";
+import CodeRunner from "./coderunnerworker.js!worker";
 import {WorkerEvent} from "./worker-utils";
 import {$, clear, deepEquals} from "./utils";
 import {serializableReviver, ExecutionTrace, ExecutionState, FnCall} from "./instrument-lib";

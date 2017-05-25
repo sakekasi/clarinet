@@ -21,6 +21,9 @@ System.config({
     "d3": "npm:d3@4.4.0",
     "recast": "npm:recast@0.11.18",
     "worker": "github:casperlamboo/plugin-worker@master",
+    "github:casperlamboo/plugin-worker@master": {
+      "./loader.js": "./loader-dev.js"
+    },
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.4.1"
     },
@@ -230,6 +233,9 @@ System.config({
     },
     "npm:inherits@2.0.1": {
       "util": "github:jspm/nodelibs-util@0.1.0"
+    },
+    "npm:isarray@1.0.0": {
+      "systemjs-json": "github:systemjs/plugin-json@0.1.2"
     },
     "npm:os-browserify@0.1.2": {
       "os": "github:jspm/nodelibs-os@0.1.0"
