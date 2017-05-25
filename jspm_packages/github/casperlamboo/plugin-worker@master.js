@@ -1,0 +1,1 @@
+module.exports = require("github:casperlamboo/plugin-worker@master/index.js");

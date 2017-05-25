@@ -1,0 +1,1 @@
+module.exports = require("npm:d3-quadtree@1.0.2/build/d3-quadtree.js");

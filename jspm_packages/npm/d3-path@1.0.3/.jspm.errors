@@ -1,0 +1,11 @@
+MultipleErrors: /Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/src/path.js:128:1: Unexpected reserved word export
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/src/path.js:128:8: Semi-colon expected
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/src/path.js:128:8: Unexpected reserved word default
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/src/path.js:128:16: Semi-colon expected
+
+MultipleErrors: /Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/index.js:1:1: Unexpected reserved word export
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/index.js:1:8: Semi-colon expected
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/index.js:1:9: Unexpected reserved word default
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/index.js:1:17: Semi-colon expected
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/index.js:1:20: Semi-colon expected
+/Users/sakekasi/.jspm/packages/npm/d3-path@1.0.3/index.js:1:31: Semi-colon expected

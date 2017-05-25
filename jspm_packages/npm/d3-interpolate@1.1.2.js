@@ -1,0 +1,1 @@
+module.exports = require("npm:d3-interpolate@1.1.2/build/d3-interpolate.js");
